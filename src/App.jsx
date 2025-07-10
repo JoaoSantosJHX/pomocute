@@ -1,15 +1,12 @@
-// App.jsx
+// src/App.jsx
 import React from 'react';
-import './App.css';
 import Timer from './components/Timer';
-import AudioPlayer from './components/AudioPlayer';
+import './App.css'; // importar o CSS que contém os estilos
 
 function App() {
   return (
-    <div className="App">
-      <h1>Pomocute</h1>
+    <div className="app-container">
       <Timer />
-      <AudioPlayer />
     </div>
   );
 }

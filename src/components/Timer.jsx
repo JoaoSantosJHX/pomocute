@@ -1,13 +1,13 @@
 // src/components/Timer.jsx
 import React, { useState, useEffect } from 'react';
 
-const Timer = () => {
-  const modes = {
-    pomodoro: 25 * 60,
-    short: 5 * 60,
-    long: 15 * 60
-  };
+const modes = {
+  pomodoro: 25 * 60,
+  short: 5 * 60,
+  long: 15 * 60,
+};
 
+const Timer = () => {
   const [mode, setMode] = useState('pomodoro');
   const [seconds, setSeconds] = useState(modes[mode]);
   const [isActive, setIsActive] = useState(false);
@@ -25,6 +25,7 @@ const Timer = () => {
       }, 1000);
     } else if (seconds === 0) {
       clearInterval(interval);
+      // Aqui você pode adicionar som ou notificação quando o tempo acabar
     }
     return () => clearInterval(interval);
   }, [isActive, seconds]);
