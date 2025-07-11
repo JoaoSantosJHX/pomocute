@@ -1,5 +1,5 @@
-// src/components/Timer.jsx
 import React, { useState, useEffect } from 'react';
+import AudioPlayer from './AudioPlayer';
 
 const modes = {
   pomodoro: 25 * 60,
@@ -11,23 +11,26 @@ const Timer = () => {
   const [mode, setMode] = useState('pomodoro');
   const [seconds, setSeconds] = useState(modes[mode]);
   const [isActive, setIsActive] = useState(false);
+  const [volume, setVolume] = useState(50); // Movido para dentro do componente
 
   useEffect(() => {
     setSeconds(modes[mode]);
     setIsActive(false);
   }, [mode]);
 
-  useEffect(() => {
-    let interval;
-    if (isActive && seconds > 0) {
-      interval = setInterval(() => {
-        setSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (seconds === 0) {
-      clearInterval(interval);
-      // Aqui você pode adicionar som ou notificação quando o tempo acabar
-    }
-    return () => clearInterval(interval);
+ useEffect(() => {
+  let interval;
+  if (isActive && seconds > 0) {
+    interval = setInterval(() => {
+      setSeconds((prev) => prev - 1);
+    }, 1000);
+  } else if (seconds === 0) {
+    clearInterval(interval);
+    const notificationSound = new Audio('/assets/alert.mp3');
+    notificationSound.play();
+    alert('Tempo encerrado! ✨ Faça uma pausa.');
+  }
+  return () => clearInterval(interval);
   }, [isActive, seconds]);
 
   const formatTime = (s) => {
@@ -73,6 +76,20 @@ const Timer = () => {
       <div className="button-group">
         <button onClick={toggleTimer}>{isActive ? 'Pausar' : 'Começar'}</button>
         <button onClick={resetTimer}>Resetar</button>
+      </div>
+      
+      <AudioPlayer volume={volume} />
+      
+      <div className="volume-control">
+        <label>Volume:</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={volume}
+          onChange={(e) => setVolume(e.target.value)}
+          className="volume-slider"
+        />
       </div>
     </div>
   );

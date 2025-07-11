@@ -70,3 +70,98 @@
   background-color: #b83280;
   color: white;
 }
+
+/* App.css */
+.audio-player {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.audio-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.audio-button {
+  background-color: #b83280;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.audio-button:hover {
+  background-color: #8b2460;
+  transform: scale(1.1);
+}
+
+.audio-info {
+  color: #4b2e2e;
+  margin-left: 10px;
+}
+
+.volume-slider {
+  width: 80px;
+  margin-left: 10px;
+  accent-color: #b83280; /* Cor do slider */
+}
+
+.audio-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.audio-error {
+  margin-top: 5px;
+  color: #ff4d4f;
+  font-size: 0.8rem;
+}
+.app-title {
+  font-size: 2.5rem;
+  color: #b83280;
+  margin-bottom: 30px;
+  font-family: 'Comic Sans MS', 'Poppins', cursive;
+}
+
+.audio-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.audio-info {
+  margin-top: 8px;
+  color: #4b2e2e;
+  font-size: 0.9rem;
+}
+
+.track-selector {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #4b2e2e;
+  font-size: 0.9rem;
+}
+
+.track-selector select {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #b83280;
+  background-color: #f5c2e7;
+  color: #4b2e2e;
+  font-weight: bold;
+}
+
+
