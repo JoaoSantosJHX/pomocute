@@ -45,18 +45,22 @@
 }
 
 .button-group button {
-  padding: 8px 16px;
-  border-radius: 10px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  background: #f0f0f3;
+  color: #4b2e2e;
+  font-weight: 600;
   border: none;
-  background-color: #b83280;
-  color: white;
-  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1),
+              -5px -5px 15px rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease-in-out;
 }
 
 .button-group button:hover {
-  background-color: #8b2460;
+  box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.05),
+              inset -5px -5px 10px rgba(255, 255, 255, 0.4);
+  transform: scale(0.98);
 }
 
 .tabs {
@@ -68,19 +72,24 @@
 
 .tab-button {
   padding: 10px 20px;
-  background-color: #f5c2e7;
+  background: #f0f0f3;
   border: none;
-  border-radius: 10px;
+  border-radius: 30px;
   font-weight: bold;
   color: #4b2e2e;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.1),
+              -3px -3px 8px rgba(255, 255, 255, 0.7);
 }
 
 .tab-button.active {
   background-color: #b83280;
   color: white;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.15),
+              inset -2px -2px 6px rgba(255, 255, 255, 0.6);
 }
+
 
 /* App.css */
 .audio-player {
@@ -96,28 +105,40 @@
 }
 
 .audio-button {
-  background-color: #b83280;
-  color: white;
+  background: #f0f0f3;
+  color: #b83280;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 16px;
+  font-size: 20px;
+  box-shadow: 6px 6px 15px rgba(0, 0, 0, 0.1),
+              -6px -6px 15px rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease-in-out;
 }
 
 .audio-button:hover {
-  background-color: #8b2460;
-  transform: scale(1.1);
+  transform: scale(1.05);
+  box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.08),
+              inset -4px -4px 10px rgba(255, 255, 255, 0.6);
 }
 
+
 .audio-info {
+  margin-top: 10px;
+  padding: 6px 18px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
   color: #4b2e2e;
-  margin-left: 10px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.08),
+              -4px -4px 10px rgba(255, 255, 255, 0.4);
 }
 
 .volume-slider {
