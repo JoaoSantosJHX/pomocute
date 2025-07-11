@@ -1,29 +1,40 @@
 .app-container {
+  height: 100vh;
+  width: 100vw;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  padding: 20px;
-  background-color: #ffd1eb; /* exemplo, pode ajustar */
   box-sizing: border-box;
 }
 
 .timer-card {
-  background-color: #ffd1eb;
+  background-color: rgba(255, 209, 235, 0.25); /* rosa com transparência */
+  backdrop-filter: blur(12px); /* efeito vidro */
+  -webkit-backdrop-filter: blur(12px); /* suporte Safari */
+  
   padding: 40px 30px;
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
   text-align: center;
   max-width: 400px;
   width: 100%;
+  color: #4b2e2e;
 }
+
 
 .timer-display {
   font-size: 6rem;
   font-weight: bold;
   color: #4b2e2e;
   margin-bottom: 30px;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .button-group {

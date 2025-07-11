@@ -7,15 +7,16 @@ const modes = {
   long: 15 * 60,
 };
 
-const Timer = () => {
+const Timer = ({onModeChange}) => {
   const [mode, setMode] = useState('pomodoro');
   const [seconds, setSeconds] = useState(modes[mode]);
   const [isActive, setIsActive] = useState(false);
   const [volume, setVolume] = useState(50); // Movido para dentro do componente
 
-  useEffect(() => {
-    setSeconds(modes[mode]);
-    setIsActive(false);
+ useEffect(() => {
+    if (onModeChange) {
+      onModeChange(mode);
+    }
   }, [mode]);
 
  useEffect(() => {
@@ -47,6 +48,20 @@ const Timer = () => {
     setSeconds(modes[mode]);
     setIsActive(false);
   };
+
+  const getBackgroundStyle = () => {
+  switch (mode) {
+    case 'pomodoro':
+      return { backgroundImage: "url('/images/pomo.jpg')" };
+    case 'short':
+      return { backgroundImage: "url('/images/short.jpg')" };
+    case 'long':
+      return { backgroundImage: "url('/images/long.jpg')" };
+    default:
+      return {};
+  }
+};
+
 
   return (
     <div className="timer-card">
