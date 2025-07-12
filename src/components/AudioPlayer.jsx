@@ -33,14 +33,18 @@ useEffect(() => {
   if (audioRef.current) {
     const wasPlaying = isPlaying;
     audioRef.current.pause();
-    audioRef.current = new Audio(currentTrack.url);
-    audioRef.current.loop = true;
-    audioRef.current.volume = volume / 100;
+
+    const newAudio = new Audio(currentTrack.url);
+    newAudio.loop = true;
+    newAudio.volume = volume / 100;
+
+    audioRef.current = newAudio;
+
     if (wasPlaying) {
-      audioRef.current.play().catch((e) => console.log('Erro ao tocar:', e));
+      newAudio.play().catch((e) => console.log('Erro ao tocar:', e));
     }
   }
-}, [currentTrack, isPlaying]); // não adicionar o volume aqui e manter o warning 
+}, [currentTrack, isPlaying]); // não incluir volume aqui 
 
   const handlePlay = async () => {
     try {
@@ -79,13 +83,17 @@ useEffect(() => {
       <p className="audio-info">🎵 Tocando: {currentTrack.name}</p>
 
       <div className="track-selector">
-        <label htmlFor="trackSelect">Escolher trilha:</label>
+        <label htmlFor="trackSelect" className="track-label">Escolher trilha:</label>
+        <div className="custom-select-wrapper">
+        </div>
         <select
           id="trackSelect"
           value={currentTrack.url}
           onChange={(e) => {
-            const selected = tracks.find(t => t.url === e.target.value);
-            setCurrentTrack(selected);
+            const selectedTrack = tracks.find(track => track.url === e.target.value);
+            if (selectedTrack) {
+              setCurrentTrack(selectedTrack);
+            }
           }}
         >
           {tracks.map((track) => (

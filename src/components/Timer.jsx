@@ -11,7 +11,8 @@ const Timer = ({onModeChange}) => {
   const [mode, setMode] = useState('pomodoro');
   const [seconds, setSeconds] = useState(modes[mode]);
   const [isActive, setIsActive] = useState(false);
-  const [volume, setVolume] = useState(50); // Movido para dentro do componente
+  const [volume, setVolume] = useState(50); 
+  const [cycleCount, setCycleCount] = useState(0);
 
  useEffect(() => {
     if (onModeChange) {
@@ -19,20 +20,42 @@ const Timer = ({onModeChange}) => {
     }
   }, [mode]);
 
+useEffect(() => {
+  setSeconds(modes[mode]);
+  setIsActive(false); 
+}, [mode]);
+
  useEffect(() => {
   let interval;
+
   if (isActive && seconds > 0) {
     interval = setInterval(() => {
       setSeconds((prev) => prev - 1);
     }, 1000);
   } else if (seconds === 0) {
     clearInterval(interval);
+
     const notificationSound = new Audio('/assets/alert.mp3');
     notificationSound.play();
-    alert('Tempo encerrado! ✨ Faça uma pausa.');
+
+    if (mode === 'pomodoro') {
+      const nextCycle = cycleCount + 1;
+      setCycleCount(nextCycle);
+
+      if (nextCycle % 4 === 0) {
+        setMode('long'); // A cada 4 ciclos, faz long break
+      } else {
+        setMode('short'); // Senão, short break
+      }
+    } else {
+      setMode('pomodoro'); // Depois de qualquer break, volta pro pomodoro
+    }
+
+    setIsActive(false);
   }
+
   return () => clearInterval(interval);
-  }, [isActive, seconds]);
+}, [isActive, seconds, mode, cycleCount]);
 
   const formatTime = (s) => {
     const minutes = Math.floor(s / 60);

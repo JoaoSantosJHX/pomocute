@@ -132,14 +132,16 @@
   margin-top: 10px;
   padding: 6px 18px;
   border-radius: 30px;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
+  background: rgba(245, 194, 231, 0.6); /* rosa translúcido */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: #4b2e2e;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.08),
               -4px -4px 10px rgba(255, 255, 255, 0.4);
 }
+
 
 .volume-slider {
   width: 80px;
@@ -188,12 +190,35 @@
 
 .track-selector select {
   margin-top: 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid #b83280;
-  background-color: #f5c2e7;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: #f0f0f3;
   color: #4b2e2e;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.08),
+              -4px -4px 10px rgba(255, 255, 255, 0.5);
+  appearance: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
 }
+
+.track-selector select:hover {
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.05),
+              inset -3px -3px 6px rgba(255, 75, 75, 0.4);
+}
+
+.track-label {
+  margin-top: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #4b2e2e;
+  display: inline-block;
+}
+
+
+
 
 
