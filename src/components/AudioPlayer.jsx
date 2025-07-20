@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPlay, FaPause } from 'react-icons/fa';
+import { playClick } from './ClickSound';
 
 const tracks = [
   { name: 'Lofi Chill Beats', url: 'https://stream.laut.fm/lofi' },
@@ -65,6 +66,7 @@ useEffect(() => {
   };
 
   const toggleAudio = () => {
+    playClick();
     isPlaying ? handlePause() : handlePlay();
   };
 
@@ -90,6 +92,7 @@ useEffect(() => {
           id="trackSelect"
           value={currentTrack.url}
           onChange={(e) => {
+            playClick();
             const selectedTrack = tracks.find(track => track.url === e.target.value);
             if (selectedTrack) {
               setCurrentTrack(selectedTrack);
