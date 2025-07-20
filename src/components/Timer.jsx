@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AudioPlayer from './AudioPlayer';
+import { playClick } from './ClickSound';
 
 const modes = {
   pomodoro: 25 * 60,
@@ -64,10 +65,12 @@ useEffect(() => {
   };
 
   const toggleTimer = () => {
+    playClick();
     setIsActive(!isActive);
   };
 
   const resetTimer = () => {
+    playClick();
     setSeconds(modes[mode]);
     setIsActive(false);
   };
@@ -91,19 +94,25 @@ useEffect(() => {
       <div className="tabs">
         <button
           className={`tab-button ${mode === 'pomodoro' ? 'active' : ''}`}
-          onClick={() => setMode('pomodoro')}
+          onClick={() => {
+            playClick();
+            setMode('pomodoro');}}
         >
           Pomodoro
         </button>
         <button
           className={`tab-button ${mode === 'short' ? 'active' : ''}`}
-          onClick={() => setMode('short')}
+          onClick={() => {
+            playClick();
+            setMode('short');}}
         >
           Short Break
         </button>
         <button
           className={`tab-button ${mode === 'long' ? 'active' : ''}`}
-          onClick={() => setMode('long')}
+          onClick={() => {
+            playClick();
+            setMode('long');}}
         >
           Long Break
         </button>
