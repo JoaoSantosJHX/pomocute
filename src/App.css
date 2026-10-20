@@ -225,7 +225,14 @@
 
 /* Fase 0: telas pequenas, rolagem e foco por teclado. */
 .app-container { min-height: 100vh; min-height: 100dvh; height: auto; width: 100%; padding: 24px 16px; }
-.timer-card { box-sizing: border-box; background-color: rgba(255, 229, 241, .92); }
+.timer-card {
+  box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(255, 218, 239, .38), rgba(255, 190, 224, .24));
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 255, 255, .46);
+  box-shadow: 0 18px 45px rgba(66, 31, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .38);
+}
 .app-title { margin-top: 0; }
 .tabs, .button-group { flex-wrap: wrap; gap: 10px; }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #69204c; outline-offset: 4px; }
