@@ -149,6 +149,22 @@
   gap: 15px;
 }
 
+.audio-skip-button {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .82);
+  color: #8b2c68;
+  cursor: pointer;
+  box-shadow: 3px 3px 10px rgba(66, 31, 61, .15), inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+
+.audio-skip-button:hover { transform: scale(1.06); }
+
 .audio-button {
   background: #f0f0f3;
   color: #b83280;
@@ -278,6 +294,49 @@
   border: 1px solid rgba(255, 255, 255, .46);
   box-shadow: 0 18px 45px rgba(66, 31, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .38);
 }
+
+/* Modo foco: a contagem permanece visível e os demais controles aparecem ao passar o cursor ou navegar pelo teclado. */
+.timer-card--focus {
+  max-width: 340px;
+  padding: 28px 26px;
+  transition: max-width .25s ease, padding .25s ease;
+}
+
+.timer-card--focus .timer-display {
+  margin: 12px 0 22px;
+  font-size: clamp(4.4rem, 12vw, 5.6rem);
+}
+
+.timer-card--focus .button-group { margin-bottom: 14px; }
+
+.timer-card--focus .timer-expanded,
+.timer-card--focus .audio-details,
+.timer-card--focus .session-status {
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity .2s ease, max-height .3s ease, margin .3s ease, transform .25s ease;
+}
+
+.timer-card--focus.timer-card--details-visible { max-width: 400px; padding: 40px 30px; }
+
+.timer-card--focus.timer-card--details-visible .timer-expanded,
+.timer-card--focus.timer-card--details-visible .audio-details,
+.timer-card--focus.timer-card--details-visible .session-status {
+  max-height: 360px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  opacity: 1;
+  overflow: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.timer-card--focus.timer-card--details-visible .tabs { margin-bottom: 20px; }
 .app-title { margin-top: 0; }
 .tabs, .button-group { flex-wrap: wrap; gap: 10px; }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #69204c; outline-offset: 4px; }
