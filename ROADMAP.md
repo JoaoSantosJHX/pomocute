@@ -6,9 +6,11 @@
 
 Este roadmap organiza o trabalho por resultados e critérios de saída. As etapas podem mudar após inspeção do app, feedback de usuários e validação das hipóteses descritas em [`VISAO_PRODUTO.md`](./VISAO_PRODUTO.md).
 
-## Agora — Base confiável
+## Fase 0 — Base confiável (concluída localmente)
 
 **Objetivo:** fazer com que a experiência atual de timer, controles, contador e música seja clara e confiável.
+
+**Conclusão em 19/10/2026:** implementação local validada com seis testes automatizados, build de produção e conferência do fluxo desktop. O responsável pelo produto informou que verificou a entrega e autorizou seguir. Regras, limitações e pendência de comparação com a versão publicada estão em [FASE_0.md](./FASE_0.md). Nenhuma publicação foi realizada.
 
 - Conferir o comportamento real de cada recurso no app e no código.
 - Definir estados do timer: pronto, focando, pausado, concluído e encerrado.
@@ -20,7 +22,7 @@ Este roadmap organiza o trabalho por resultados e critérios de saída. As etapa
 
 **Critério de saída:** uma pessoa consegue iniciar, pausar, retomar e concluir uma sessão; o tempo exibido permanece correto nos cenários suportados; os estados e próximos passos são compreensíveis.
 
-## Próximo — Ciclo Pomodoro claro
+## Próxima etapa — Ciclo Pomodoro claro
 
 **Objetivo:** apoiar um ciclo completo de foco e descanso sem tornar a configuração um obstáculo.
 
