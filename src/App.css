@@ -222,3 +222,15 @@
 
 
 
+
+/* Fase 0: telas pequenas, rolagem e foco por teclado. */
+.app-container { min-height: 100vh; min-height: 100dvh; height: auto; width: 100%; padding: 24px 16px; }
+.timer-card { box-sizing: border-box; background-color: rgba(255, 229, 241, .92); }
+.app-title { margin-top: 0; }
+.tabs, .button-group { flex-wrap: wrap; gap: 10px; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #69204c; outline-offset: 4px; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.track-selector, .track-selector select { max-width: 100%; }
+.volume-control { margin-top: 20px; }
+@media (max-width: 420px) { .timer-card { padding: 24px 14px; } .timer-display { font-size: clamp(3rem, 20vw, 5rem); } .tab-button { padding: 10px 12px; } }
+@media (prefers-reduced-motion: reduce) { button { transition: none !important; } }

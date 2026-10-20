@@ -1,8 +1,64 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
-
-test('renders learn react link', () => {
+beforeEach(() => {
+  localStorage.clear();
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2026-10-19T12:00:00Z'));
+  jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  jest.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+});
+afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
+const click = name => fireEvent.click(screen.getByRole('button', { name, exact: true }));
+test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  click('Começar');
+  act(() => jest.advanceTimersByTime(10000));
+  click('Pausar');
+  expect(screen.getByRole('timer')).toHaveTextContent('24:50');
+  act(() => jest.advanceTimersByTime(60000));
+  expect(screen.getByRole('timer')).toHaveTextContent('24:50');
+  click('Retomar'); click('Encerrar');
+  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+  expect(screen.getByText('0', { selector: 'strong' })).toBeInTheDocument();
+});
+test('sincroniza ao retornar após suspensão e conta apenas uma vez', () => {
+  render(<App />); click('Começar');
+  act(() => { jest.setSystemTime(Date.now() + 1500001); window.dispatchEvent(new Event('focus')); });
+  expect(screen.getByText('Sessão concluída!')).toBeInTheDocument();
+  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
+  act(() => jest.advanceTimersByTime(5000));
+  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
+  click('Preparar pausa curta'); click('Começar');
+  act(() => jest.advanceTimersByTime(300000));
+  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
+});
+test('restaura sessão ativa após recarga', () => {
+  const first = render(<App />); click('Começar'); first.unmount();
+  act(() => jest.setSystemTime(Date.now() + 60000));
+  render(<App />);
+  expect(screen.getByRole('timer')).toHaveTextContent('24:00');
+});
+test('mostra falha do player sem afetar o timer', async () => {
+  HTMLMediaElement.prototype.play.mockRejectedValue(new Error('offline'));
+  render(<App />);
+  await act(async () => click('Tocar música'));
+  expect(screen.getByText(/Música indisponível/)).toBeInTheDocument();
+  expect(screen.getByRole('timer')).toHaveTextContent('25:00');
+});
+
+test('quarta conclusão sugere pausa longa e recarga não duplica o contador', () => {
+  localStorage.setItem('pomocute-session-v1', JSON.stringify({ mode: 'pomodoro', status: 'running',
+    remaining: 1500000, deadline: Date.now() - 1, count: 3 }));
+  const first = render(<App />);
+  expect(screen.getByText('4', { selector: 'strong' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Preparar pausa longa' })).toBeInTheDocument();
+  first.unmount(); render(<App />);
+  expect(screen.getByText('4', { selector: 'strong' })).toBeInTheDocument();
+});
+test('dados locais inválidos não impedem iniciar uma sessão', () => {
+  localStorage.setItem('pomocute-session-v1', '{invalid');
+  render(<App />);
+  expect(screen.getByRole('timer')).toHaveTextContent('25:00');
+  click('Começar');
+  expect(screen.getByText('Hora de focar')).toBeInTheDocument();
 });
