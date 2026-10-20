@@ -21,6 +21,7 @@ export default function Timer({ onSceneAction }) {
   const [session, setSession] = useState(initial);
   const [now, setNow] = useState(Date.now);
   const [volume, setVolume] = useState(50);
+  const [showFocusDetails, setShowFocusDetails] = useState(false);
   const alerted = useRef(false);
   const { mode, status, remaining, deadline, count } = session;
   const seconds = Math.ceil(Math.max(0, status === 'running' ? deadline - now : remaining) / 1000);
@@ -90,15 +91,28 @@ export default function Timer({ onSceneAction }) {
   const nextMode = mode === 'pomodoro' ? (count % 4 === 0 ? 'long' : 'short') : 'pomodoro';
   const messages = { ready: 'Pronto para começar', running: mode === 'pomodoro' ? 'Hora de focar' : 'Hora de descansar',
     paused: 'Sessão pausada', completed: 'Sessão concluída!', ended: 'Sessão encerrada sem contabilizar' };
+  const isFocusMode = status === 'running' || status === 'paused';
 
-  return <main className="timer-card">
-    <h1 className="app-title">Pomocute</h1>
-    <div className="tabs" role="group" aria-label="Tipo de sessão">
-      {Object.keys(modes).map(key => <button key={key} className={'tab-button ' + (mode === key ? 'active' : '')}
-        aria-pressed={mode === key} disabled={status === 'running' || status === 'paused'}
-        onClick={() => selectMode(key)}>{labels[key]}</button>)}
+  useEffect(() => {
+    if (!isFocusMode) setShowFocusDetails(false);
+  }, [isFocusMode]);
+
+  return <main
+    className={`timer-card${isFocusMode ? ' timer-card--focus' : ''}${showFocusDetails ? ' timer-card--details-visible' : ''}`}
+    onMouseEnter={() => { if (isFocusMode) setShowFocusDetails(true); }}
+    onMouseLeave={() => setShowFocusDetails(false)}
+    onFocusCapture={() => { if (isFocusMode) setShowFocusDetails(true); }}
+    onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setShowFocusDetails(false); }}
+  >
+    <div className="timer-expanded">
+      <h1 className="app-title">Pomocute</h1>
+      <div className="tabs" role="group" aria-label="Tipo de sessão">
+        {Object.keys(modes).map(key => <button key={key} className={'tab-button ' + (mode === key ? 'active' : '')}
+          aria-pressed={mode === key} disabled={status === 'running' || status === 'paused'}
+          onClick={() => selectMode(key)}>{labels[key]}</button>)}
+      </div>
     </div>
-    <p role="status">{messages[status]}</p>
+    <p className="session-status" role="status">{messages[status]}</p>
     <div className="timer-display" role="timer" aria-label="Tempo restante" aria-live="off">
       {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
     </div>
@@ -107,9 +121,9 @@ export default function Timer({ onSceneAction }) {
       <button onClick={end} disabled={status !== 'running' && status !== 'paused'}>Encerrar</button>
     </div>
     {status === 'completed' && <button className="tab-button" onClick={() => selectMode(nextMode)}>Preparar {labels[nextMode].toLowerCase()}</button>}
-    <p>Sessões de foco concluídas: <strong>{count}</strong></p>
+    <p className="timer-expanded">Sessões de foco concluídas: <strong>{count}</strong></p>
     <AudioPlayer volume={volume} />
-    <div className="volume-control">
+    <div className="timer-expanded volume-control">
       <label htmlFor="music-volume">Volume da música:</label>
       <input id="music-volume" type="range" min="0" max="100" value={volume}
         onChange={event => setVolume(Number(event.target.value))} className="volume-slider" />

@@ -35,6 +35,23 @@ test('alterna a cena de entrada ao retornar para a home', () => {
   expect(activeBackground()).toBe('/videos/home/home_page2.mp4');
 });
 
+test('compacta o card durante uma sessão ativa e permite navegar entre faixas', () => {
+  render(<App />);
+  click('Começar');
+  const card = document.querySelector('.timer-card');
+  expect(card).toHaveClass('timer-card--focus');
+  expect(card).not.toHaveClass('timer-card--details-visible');
+  fireEvent.mouseEnter(card);
+  expect(card).toHaveClass('timer-card--details-visible');
+  fireEvent.mouseLeave(card);
+  expect(card).not.toHaveClass('timer-card--details-visible');
+  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/lofi');
+  click('Próxima faixa');
+  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/jazzradio');
+  click('Faixa anterior');
+  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/lofi');
+});
+
 test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
   render(<App />);
   click('Começar');
