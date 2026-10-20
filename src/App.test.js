@@ -9,14 +9,17 @@ beforeEach(() => {
 });
 afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
 const click = name => fireEvent.click(screen.getByRole('button', { name, exact: true }));
-const activeBackground = () => document.querySelector('.background-scene--current source').getAttribute('src');
+const activeBackground = () => document.querySelector('.background-scene--current').getAttribute('src');
+const activeVideo = () => document.querySelector('.background-scene--current');
 
 test('alterna a cena de foco a cada nova sessão', () => {
   jest.spyOn(Math, 'random').mockReturnValue(0);
   render(<App />);
   expect(activeBackground()).toBe('/videos/home/home_page1.mp4');
+  const homeVideo = activeVideo();
   click('Começar');
   expect(activeBackground()).toBe('/videos/estudo/estudo_3.mp4');
+  expect(activeVideo()).not.toBe(homeVideo);
   click('Encerrar');
   expect(activeBackground()).toBe('/videos/home/home_page2.mp4');
   click('Começar');

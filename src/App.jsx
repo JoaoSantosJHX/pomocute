@@ -25,51 +25,94 @@ const chooseScene = (group, previous) => {
   return options[Math.floor(Math.random() * options.length)] || previous;
 };
 
-const groupForSession = ({ mode, status }) => {
-  if (status === 'ended') return 'home';
-  if (mode === 'pomodoro') return status === 'ready' ? 'home' : 'focus';
-  return 'break';
-};
-
-function BackgroundVideo({ scene, className }) {
+function BackgroundVideo({ scene, className, onReady, onFadeEnd }) {
   return (
-    <video className={className} autoPlay loop muted playsInline preload="metadata" aria-hidden="true">
-      <source src={scene} type="video/mp4" />
-    </video>
+    <video
+      className={className}
+      src={scene.src}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      aria-hidden="true"
+      onCanPlay={() => onReady?.(scene.id)}
+      onError={() => onReady?.(scene.id)}
+      onAnimationEnd={() => onFadeEnd?.(scene.id)}
+    />
   );
 }
 
 function App() {
-  const [scene, setScene] = useState(() => chooseScene('home'));
-  const [previousScene, setPreviousScene] = useState(null);
-  const currentGroup = useRef('home');
-  const lastSceneByGroup = useRef({ home: scene, focus: null, break: null });
+  const [activeScene, setActiveScene] = useState(() => ({
+    group: 'home',
+    id: 0,
+    src: chooseScene('home'),
+  }));
+  const [leavingScene, setLeavingScene] = useState(null);
+  const [isActiveSceneReady, setIsActiveSceneReady] = useState(false);
+  const activeSceneRef = useRef(activeScene);
+  const nextSceneId = useRef(1);
+  const lastSceneByGroup = useRef({ home: activeScene.src, focus: null, break: null });
 
-  const changeScene = useCallback(group => {
-    if (currentGroup.current === group) return;
+  const transitionTo = useCallback((group, { force = false } = {}) => {
+    if (!force && activeSceneRef.current.group === group) return;
 
-    currentGroup.current = group;
-    const nextScene = chooseScene(group, lastSceneByGroup.current[group]);
-    lastSceneByGroup.current[group] = nextScene;
-    setPreviousScene(scene);
-    setScene(nextScene);
-  }, [scene]);
+    const nextScene = {
+      group,
+      id: nextSceneId.current++,
+      src: chooseScene(group, lastSceneByGroup.current[group]),
+    };
+
+    lastSceneByGroup.current[group] = nextScene.src;
+    setLeavingScene(activeSceneRef.current);
+    setIsActiveSceneReady(false);
+    activeSceneRef.current = nextScene;
+    setActiveScene(nextScene);
+  }, []);
 
   useEffect(() => {
-    if (!previousScene) return undefined;
-    const timer = window.setTimeout(() => setPreviousScene(null), 850);
+    if (!leavingScene || !isActiveSceneReady) return undefined;
+    const timer = window.setTimeout(() => {
+      setLeavingScene(previous => previous?.id === leavingScene.id ? null : previous);
+    }, 950);
     return () => window.clearTimeout(timer);
-  }, [previousScene]);
+  }, [isActiveSceneReady, leavingScene]);
 
-  const handleSessionChange = useCallback(session => {
-    changeScene(groupForSession(session));
-  }, [changeScene]);
+  const markSceneReady = useCallback(id => {
+    if (activeSceneRef.current.id === id) setIsActiveSceneReady(true);
+  }, []);
+
+  const removeLeavingScene = useCallback(id => {
+    setLeavingScene(previous => previous?.id === id ? null : previous);
+  }, []);
+
+  const handleSceneAction = useCallback(({ type, mode }) => {
+    if (type === 'end') {
+      transitionTo('home', { force: true });
+      return;
+    }
+
+    const sceneGroup = mode === 'pomodoro' ? 'focus' : 'break';
+    if (type === 'start') transitionTo(sceneGroup, { force: true });
+    if (type === 'mode') transitionTo(mode === 'pomodoro' ? 'home' : 'break', { force: mode !== 'pomodoro' });
+  }, [transitionTo]);
 
   return (
     <div className="app-container">
-      {previousScene && <BackgroundVideo scene={previousScene} className="background-scene background-scene--previous" />}
-      <BackgroundVideo scene={scene} className="background-scene background-scene--current" />
-      <Timer onSessionChange={handleSessionChange} />
+      {leavingScene && <BackgroundVideo
+        key={`leaving-${leavingScene.id}`}
+        scene={leavingScene}
+        className={`background-scene background-scene--previous${isActiveSceneReady ? ' is-fading' : ''}`}
+        onFadeEnd={removeLeavingScene}
+      />}
+      <BackgroundVideo
+        key={`active-${activeScene.id}`}
+        scene={activeScene}
+        className={`background-scene background-scene--current${isActiveSceneReady ? ' is-ready' : ''}`}
+        onReady={markSceneReady}
+      />
+      <Timer onSceneAction={handleSceneAction} />
     </div>
   );
 }
