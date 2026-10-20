@@ -17,7 +17,7 @@ const initial = () => {
   return { mode: 'pomodoro', status: 'ready', remaining: modes.pomodoro * 1000, deadline: null, count: 0 };
 };
 
-export default function Timer({ onModeChange }) {
+export default function Timer({ onSessionChange }) {
   const [session, setSession] = useState(initial);
   const [now, setNow] = useState(Date.now);
   const [volume, setVolume] = useState(50);
@@ -25,7 +25,7 @@ export default function Timer({ onModeChange }) {
   const { mode, status, remaining, deadline, count } = session;
   const seconds = Math.ceil(Math.max(0, status === 'running' ? deadline - now : remaining) / 1000);
 
-  useEffect(() => { onModeChange?.(mode); }, [mode, onModeChange]);
+  useEffect(() => { onSessionChange?.(session); }, [session, onSessionChange]);
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(session)); } catch (_) {}
   }, [session]);
