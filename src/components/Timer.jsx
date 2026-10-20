@@ -17,7 +17,7 @@ const initial = () => {
   return { mode: 'pomodoro', status: 'ready', remaining: modes.pomodoro * 1000, deadline: null, count: 0 };
 };
 
-export default function Timer({ onModeChange }) {
+export default function Timer({ onSceneAction }) {
   const [session, setSession] = useState(initial);
   const [now, setNow] = useState(Date.now);
   const [volume, setVolume] = useState(50);
@@ -25,7 +25,6 @@ export default function Timer({ onModeChange }) {
   const { mode, status, remaining, deadline, count } = session;
   const seconds = Math.ceil(Math.max(0, status === 'running' ? deadline - now : remaining) / 1000);
 
-  useEffect(() => { onModeChange?.(mode); }, [mode, onModeChange]);
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(session)); } catch (_) {}
   }, [session]);
@@ -59,12 +58,14 @@ export default function Timer({ onModeChange }) {
 
   const selectMode = next => {
     playClick();
+    onSceneAction?.({ type: 'mode', mode: next });
     setSession(previous => ({ ...previous, mode: next, status: 'ready', remaining: modes[next] * 1000, deadline: null }));
   };
   const toggle = () => {
     playClick();
     const time = Date.now();
     setNow(time);
+    if (status !== 'running' && status !== 'paused') onSceneAction?.({ type: 'start', mode });
     setSession(previous => {
       if (previous.status === 'running') {
         const left = Math.max(0, previous.deadline - time);
@@ -78,6 +79,7 @@ export default function Timer({ onModeChange }) {
   const end = () => {
     playClick();
     const time = Date.now();
+    onSceneAction?.({ type: 'end', mode });
     setSession(previous => {
       const completed = previous.status === 'running' && previous.deadline <= time;
       return { ...previous, status: completed ? 'completed' : 'ended',

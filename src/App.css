@@ -10,6 +10,49 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #171d3b;
+}
+
+.background-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+.background-scene--current {
+  opacity: 0;
+}
+
+.background-scene--current.is-ready {
+  animation: scene-fade-in 850ms ease-out both;
+}
+
+.background-scene--previous {
+  opacity: 1;
+}
+
+.background-scene--previous.is-fading {
+  animation: scene-fade-out 850ms ease-out both;
+}
+
+@keyframes scene-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scene-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .timer-card {
@@ -26,6 +69,8 @@
   max-width: 400px;
   width: 100%;
   color: #4b2e2e;
+  position: relative;
+  z-index: 1;
 }
 
 
@@ -240,4 +285,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .track-selector, .track-selector select { max-width: 100%; }
 .volume-control { margin-top: 20px; }
 @media (max-width: 420px) { .timer-card { padding: 24px 14px; } .timer-display { font-size: clamp(3rem, 20vw, 5rem); } .tab-button { padding: 10px 12px; } }
-@media (prefers-reduced-motion: reduce) { button { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  button, .background-scene { transition: none !important; animation: none !important; }
+  .background-scene--current, .background-scene--current.is-ready { opacity: 1; }
+  .background-scene--previous, .background-scene--previous.is-fading { opacity: 0; }
+}
