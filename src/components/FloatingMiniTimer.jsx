@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './FloatingMiniTimer.css';
 
@@ -84,6 +84,17 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [notice, setNotice] = useState('');
 
+  useEffect(() => {
+    if (!pipWindow) return undefined;
+
+    const handlePageHide = () => setPipWindow(current => current === pipWindow ? null : current);
+    pipWindow.addEventListener('pagehide', handlePageHide, { once: true });
+    return () => {
+      pipWindow.removeEventListener('pagehide', handlePageHide);
+      if (!pipWindow.closed) pipWindow.close();
+    };
+  }, [pipWindow]);
+
   const closePip = () => {
     if (pipWindow && !pipWindow.closed) pipWindow.close();
     setPipWindow(null);
@@ -109,9 +120,6 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
       });
       nextWindow.document.title = 'Pomocute — Mini-timer';
       nextWindow.document.body.classList.add('pomocute-pip-window');
-      nextWindow.addEventListener('pagehide', () => {
-        setPipWindow(current => current === nextWindow ? null : current);
-      }, { once: true });
       setPipWindow(nextWindow);
       setFallbackOpen(false);
       setNotice('');
