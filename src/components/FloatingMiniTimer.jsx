@@ -116,7 +116,9 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
     try {
       const nextWindow = await pictureInPicture.requestWindow({ width: 340, height: 220 });
       Array.from(document.querySelectorAll('style, link[rel="stylesheet"]')).forEach(source => {
-        nextWindow.document.head.appendChild(source.cloneNode(true));
+        const copy = source.cloneNode(true);
+        if (copy.tagName === 'LINK') copy.href = source.href;
+        nextWindow.document.head.appendChild(copy);
       });
       nextWindow.document.title = 'Pomocute — Mini-timer';
       nextWindow.document.body.classList.add('pomocute-pip-window');
@@ -137,10 +139,11 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
         Abrir mini-timer flutuante
       </button>
       {notice && <p className="mini-timer-notice" role="status">{notice}</p>}
-      {fallbackOpen && (
+      {fallbackOpen && createPortal(
         <div className="mini-timer-fallback">
           <MiniTimerPanel {...panelProps} onClose={() => setFallbackOpen(false)} />
-        </div>
+        </div>,
+        document.body
       )}
       {pipWindow && !pipWindow.closed && createPortal(
         <MiniTimerPanel {...panelProps} onClose={closePip} />,
