@@ -1,6 +1,7 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 beforeEach(() => {
+  delete window.documentPictureInPicture;
   localStorage.clear();
   jest.useFakeTimers();
   jest.setSystemTime(new Date('2026-10-19T12:00:00Z'));
@@ -104,4 +105,48 @@ test('dados locais inválidos não impedem iniciar uma sessão', () => {
   expect(screen.getByRole('timer')).toHaveTextContent('25:00');
   click('Começar');
   expect(screen.getByText('Hora de focar')).toBeInTheDocument();
+});
+
+test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', async () => {
+  const pipWindow = {
+    document,
+    closed: false,
+    focus: jest.fn(),
+    close: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  };
+  const requestWindow = jest.fn().mockResolvedValue(pipWindow);
+  Object.defineProperty(window, 'documentPictureInPicture', {
+    configurable: true,
+    value: { requestWindow },
+  });
+
+  render(<App />);
+  click('Começar');
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir mini-timer flutuante' }));
+  });
+
+  expect(requestWindow).toHaveBeenCalledWith({ width: 340, height: 220 });
+  expect(screen.getByRole('progressbar', { name: 'Progresso da sessão' })).toHaveAttribute('aria-valuenow', '0');
+  fireEvent.click(screen.getByRole('button', { name: 'Pausar timer' }));
+  expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Encerrar sessão' }));
+  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+});
+
+test('mantém um mini-timer dentro da página quando PiP não está disponível', () => {
+  render(<App />);
+  expect(screen.queryByRole('button', { name: 'Abrir mini-timer flutuante' })).not.toBeInTheDocument();
+  click('Começar');
+  click('Abrir mini-timer flutuante');
+
+  expect(screen.getByText(/mini-timer abriu nesta página/)).toBeInTheDocument();
+  const fallback = document.querySelector('.mini-timer-fallback');
+  expect(fallback).toBeInTheDocument();
+  fireEvent.click(within(fallback).getByRole('button', { name: 'Pausar timer' }));
+  expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
+  fireEvent.click(within(fallback).getByRole('button', { name: 'Encerrar sessão' }));
+  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
 });
