@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AudioPlayer from './AudioPlayer';
+import FloatingMiniTimer from './FloatingMiniTimer';
 import { playClick } from './ClickSound';
 
 const modes = { pomodoro: 1500, short: 300, long: 900 };
@@ -24,7 +25,8 @@ export default function Timer({ onSceneAction }) {
   const [showFocusDetails, setShowFocusDetails] = useState(false);
   const alerted = useRef(false);
   const { mode, status, remaining, deadline, count } = session;
-  const seconds = Math.ceil(Math.max(0, status === 'running' ? deadline - now : remaining) / 1000);
+  const remainingMs = Math.max(0, status === 'running' ? deadline - now : remaining);
+  const seconds = Math.ceil(remainingMs / 1000);
 
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(session)); } catch (_) {}
@@ -120,6 +122,14 @@ export default function Timer({ onSceneAction }) {
       <button onClick={toggle}>{status === 'running' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Começar'}</button>
       <button onClick={end} disabled={status !== 'running' && status !== 'paused'}>Encerrar</button>
     </div>
+    {isFocusMode && <FloatingMiniTimer
+      mode={mode}
+      status={status}
+      remainingMs={remainingMs}
+      durationMs={modes[mode] * 1000}
+      onToggle={toggle}
+      onEnd={end}
+    />}
     {status === 'completed' && <button className="tab-button" onClick={() => selectMode(nextMode)}>Preparar {labels[nextMode].toLowerCase()}</button>}
     <p className="timer-expanded">Sessões de foco concluídas: <strong>{count}</strong></p>
     <AudioPlayer volume={volume} />
