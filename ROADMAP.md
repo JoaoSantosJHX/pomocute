@@ -37,6 +37,24 @@ Este roadmap organiza o trabalho por resultados e critérios de saída, sem data
 
 **Critério de saída:** usuários conseguem entender o estado do timer, completar mais de um ciclo e controlar a música sem perder o foco ou precisar reconfigurar a experiência a cada etapa. A interface continua utilizável em telas pequenas e grandes.
 
+## Frente planejada — SEO e Aquisição Orgânica
+
+**Prioridade:** iniciar depois de validar a versão pública e consolidar a experiência principal. Esta frente foi incluída no planejamento, sem compromisso de data ou execução imediata.
+
+**Objetivo:** tornar o Pomocute mais fácil de encontrar em buscas e atrair pessoas interessadas em ferramentas de foco por canais orgânicos.
+
+- Fazer um diagnóstico de indexação, estrutura das páginas, metadados, links e desempenho.
+- Entender como o público procura timers Pomodoro e ferramentas de foco; priorizar termos e necessidades compatíveis com o produto.
+- Melhorar títulos, descrições, hierarquia de conteúdo e dados técnicos de SEO nas páginas existentes.
+- Criar conteúdo útil para as dúvidas e buscas identificadas, sem publicar páginas repetitivas ou conteúdo feito apenas para mecanismos de busca.
+- Avaliar sitemap, robots, dados estruturados e ferramentas de acompanhamento de desempenho orgânico.
+- Revisar velocidade, experiência móvel e métricas de experiência da página, considerando o impacto dos recursos visuais.
+- Medir impressões, cliques, acessos orgânicos e início de sessões; estabelecer uma linha de base antes de definir metas.
+
+**Diretriz de custo:** preservar a operação sem custo de hospedagem e priorizar ações orgânicas enquanto o produto valida sua experiência e aquisição. Não assumir investimento em anúncios ou novas ferramentas pagas sem evidência de retorno.
+
+**Critério de saída:** páginas importantes podem ser indexadas e são tecnicamente acessíveis; as buscas priorizadas correspondem ao público e à proposta do Pomocute; o desempenho orgânico e sua contribuição para o início de sessões podem ser acompanhados com uma linha de base definida.
+
 ## Depois — Preferências e histórico simples
 
 **Objetivo:** apoiar a continuidade de uso e ajudar a pessoa a perceber seu próprio progresso, com dados mínimos.
