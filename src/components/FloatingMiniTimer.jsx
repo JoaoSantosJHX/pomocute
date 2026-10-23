@@ -1,23 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { FaPause, FaPlay, FaStop } from 'react-icons/fa';
 import { LuPictureInPicture2 } from 'react-icons/lu';
 import './FloatingMiniTimer.css';
 
 const modeLabels = { pomodoro: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
-const statusLabels = {
-  ready: 'Pronto para começar',
-  running: 'Em andamento',
-  paused: 'Pausado',
-  completed: 'Concluído',
-  ended: 'Encerrado',
-};
 
 function formatTime(milliseconds) {
   const seconds = Math.ceil(Math.max(0, milliseconds) / 1000);
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd, onClose }) {
+function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd, onClose, isFallback = false }) {
   const progress = Math.min(1, Math.max(0, 1 - remainingMs / durationMs));
   const circumference = 2 * Math.PI * 25;
   const dashOffset = circumference * (1 - progress);
@@ -26,8 +20,7 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
 
   return (
     <section className="mini-timer-panel" aria-label="Mini-timer do Pomocute">
-      <header className="mini-timer-header">
-        <span className="mini-timer-brand">Pomocute</span>
+      {isFallback && (
         <button
           type="button"
           className="mini-timer-close"
@@ -36,44 +29,54 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
         >
           ×
         </button>
-      </header>
+      )}
 
       <div className="mini-timer-main">
-        <div
-          className="mini-timer-progress"
-          role="progressbar"
-          aria-label="Progresso da sessão"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow={Math.round(progress * 100)}
-        >
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <circle className="mini-timer-progress-track" cx="32" cy="32" r="25" />
-            <circle
-              className="mini-timer-progress-value"
-              cx="32"
-              cy="32"
-              r="25"
-              strokeDasharray={circumference}
-              strokeDashoffset={dashOffset}
-            />
-          </svg>
-          <span aria-hidden="true">{Math.round(progress * 100)}%</span>
+        <div className="mini-timer-progress">
+          <div
+            className="mini-timer-progress-ring"
+            role="progressbar"
+            aria-label="Progresso da sessão"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={Math.round(progress * 100)}
+          >
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle className="mini-timer-progress-track" cx="32" cy="32" r="25" />
+              <circle
+                className="mini-timer-progress-value"
+                cx="32"
+                cy="32"
+                r="25"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+              />
+            </svg>
+          </div>
+          <button
+            type="button"
+            className="mini-timer-toggle"
+            aria-label={isRunning ? 'Pausar timer' : 'Retomar timer'}
+            onClick={onToggle}
+            disabled={status === 'completed' || status === 'ended'}
+          >
+            {isRunning ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+          </button>
         </div>
 
         <div className="mini-timer-readout">
-          <span className="mini-timer-mode">{modeLabels[mode]}</span>
           <strong role="timer" aria-label="Tempo restante">{formatTime(remainingMs)}</strong>
-          <span className="mini-timer-status" role="status">{statusLabels[status]}</span>
+          <span className="mini-timer-mode"><i aria-hidden="true" />{modeLabels[mode]}</span>
         </div>
-      </div>
 
-      <div className="mini-timer-controls">
-        <button type="button" onClick={onToggle} disabled={status === 'completed' || status === 'ended'}>
-          {isRunning ? 'Pausar timer' : status === 'paused' ? 'Retomar timer' : 'Começar timer'}
-        </button>
-        <button type="button" className="mini-timer-end" onClick={onEnd} disabled={!canEnd}>
-          Encerrar sessão
+        <button
+          type="button"
+          className="mini-timer-end"
+          aria-label="Encerrar sessão"
+          onClick={onEnd}
+          disabled={!canEnd}
+        >
+          <FaStop aria-hidden="true" />
         </button>
       </div>
     </section>
@@ -115,7 +118,7 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
   };
 
   const openBrowserPopup = () => {
-    const popup = window.open('', 'pomocute-mini-timer', 'popup=yes,width=340,height=220');
+    const popup = window.open('', 'pomocute-mini-timer', 'popup=yes,width=360,height=220');
     if (!popup) return false;
     prepareExternalWindow(popup);
     return true;
@@ -130,7 +133,11 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
     const pictureInPicture = window.documentPictureInPicture;
     if (pictureInPicture && typeof pictureInPicture.requestWindow === 'function') {
       try {
-        const nextWindow = await pictureInPicture.requestWindow({ width: 340, height: 220 });
+        const nextWindow = await pictureInPicture.requestWindow({
+          width: 360,
+          height: 160,
+          preferInitialWindowPlacement: true,
+        });
         prepareExternalWindow(nextWindow);
         return;
       } catch (_) {
@@ -160,7 +167,7 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
       {notice && <p className="mini-timer-notice" role="status">{notice}</p>}
       {fallbackOpen && createPortal(
         <div className="mini-timer-fallback">
-          <MiniTimerPanel {...panelProps} onClose={() => setFallbackOpen(false)} />
+          <MiniTimerPanel {...panelProps} isFallback onClose={() => setFallbackOpen(false)} />
         </div>,
         document.body
       )}

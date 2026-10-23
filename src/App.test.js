@@ -128,9 +128,14 @@ test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', a
     fireEvent.click(screen.getByRole('button', { name: 'Abrir mini-timer flutuante' }));
   });
 
-  expect(requestWindow).toHaveBeenCalledWith({ width: 340, height: 220 });
+  expect(requestWindow).toHaveBeenCalledWith({
+    width: 360,
+    height: 160,
+    preferInitialWindowPlacement: true,
+  });
   expect(screen.getByRole('progressbar', { name: 'Progresso da sessão' })).toHaveAttribute('aria-valuenow', '0');
   fireEvent.click(screen.getByRole('button', { name: 'Pausar timer' }));
+  expect(screen.getByRole('button', { name: 'Retomar timer' })).toBeInTheDocument();
   expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Encerrar sessão' }));
   expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
