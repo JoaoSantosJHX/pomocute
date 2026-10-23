@@ -137,6 +137,7 @@ test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', a
 });
 
 test('mantém um mini-timer dentro da página quando PiP não está disponível', () => {
+  const openWindow = jest.spyOn(window, 'open').mockReturnValue(null);
   render(<App />);
   expect(screen.queryByRole('button', { name: 'Abrir mini-timer flutuante' })).not.toBeInTheDocument();
   click('Começar');
@@ -149,4 +150,5 @@ test('mantém um mini-timer dentro da página quando PiP não está disponível'
   expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
   fireEvent.click(within(fallback).getByRole('button', { name: 'Encerrar sessão' }));
   expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+  openWindow.mockRestore();
 });

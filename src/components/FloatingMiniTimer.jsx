@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { LuPictureInPicture2 } from 'react-icons/lu';
 import './FloatingMiniTimer.css';
 
 const modeLabels = { pomodoro: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
@@ -80,54 +81,66 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
 }
 
 export default function FloatingMiniTimer({ mode, status, remainingMs, durationMs, onToggle, onEnd }) {
-  const [pipWindow, setPipWindow] = useState(null);
+  const [externalWindow, setExternalWindow] = useState(null);
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    if (!pipWindow) return undefined;
+    if (!externalWindow) return undefined;
 
-    const handlePageHide = () => setPipWindow(current => current === pipWindow ? null : current);
-    pipWindow.addEventListener('pagehide', handlePageHide, { once: true });
+    const handlePageHide = () => setExternalWindow(current => current === externalWindow ? null : current);
+    externalWindow.addEventListener('pagehide', handlePageHide, { once: true });
     return () => {
-      pipWindow.removeEventListener('pagehide', handlePageHide);
-      if (!pipWindow.closed) pipWindow.close();
+      externalWindow.removeEventListener('pagehide', handlePageHide);
+      if (!externalWindow.closed) externalWindow.close();
     };
-  }, [pipWindow]);
+  }, [externalWindow]);
 
-  const closePip = () => {
-    if (pipWindow && !pipWindow.closed) pipWindow.close();
-    setPipWindow(null);
+  const closeExternalWindow = () => {
+    if (externalWindow && !externalWindow.closed) externalWindow.close();
+    setExternalWindow(null);
+  };
+
+  const prepareExternalWindow = nextWindow => {
+    Array.from(document.querySelectorAll('style, link[rel="stylesheet"]')).forEach(source => {
+      const copy = source.cloneNode(true);
+      if (copy.tagName === 'LINK') copy.href = source.href;
+      nextWindow.document.head.appendChild(copy);
+    });
+    nextWindow.document.title = 'Pomocute — Mini-timer';
+    nextWindow.document.body.classList.add('pomocute-pip-window');
+    setExternalWindow(nextWindow);
+    setFallbackOpen(false);
+    setNotice('');
+  };
+
+  const openBrowserPopup = () => {
+    const popup = window.open('', 'pomocute-mini-timer', 'popup=yes,width=340,height=220');
+    if (!popup) return false;
+    prepareExternalWindow(popup);
+    return true;
   };
 
   const openMiniTimer = async () => {
-    if (pipWindow && !pipWindow.closed) {
-      pipWindow.focus();
+    if (externalWindow && !externalWindow.closed) {
+      externalWindow.focus();
       return;
     }
 
     const pictureInPicture = window.documentPictureInPicture;
-    if (!pictureInPicture || typeof pictureInPicture.requestWindow !== 'function') {
-      setFallbackOpen(true);
-      setNotice('Este navegador não oferece uma janela PiP para documentos. O mini-timer abriu nesta página; a janela não ficará sobre outras abas.');
-      return;
+    if (pictureInPicture && typeof pictureInPicture.requestWindow === 'function') {
+      try {
+        const nextWindow = await pictureInPicture.requestWindow({ width: 340, height: 220 });
+        prepareExternalWindow(nextWindow);
+        return;
+      } catch (_) {
+        // A janela pop-out abaixo mantém a experiência flutuante quando PiP falha.
+      }
     }
 
-    try {
-      const nextWindow = await pictureInPicture.requestWindow({ width: 340, height: 220 });
-      Array.from(document.querySelectorAll('style, link[rel="stylesheet"]')).forEach(source => {
-        const copy = source.cloneNode(true);
-        if (copy.tagName === 'LINK') copy.href = source.href;
-        nextWindow.document.head.appendChild(copy);
-      });
-      nextWindow.document.title = 'Pomocute — Mini-timer';
-      nextWindow.document.body.classList.add('pomocute-pip-window');
-      setPipWindow(nextWindow);
-      setFallbackOpen(false);
-      setNotice('');
-    } catch (_) {
+    if (!openBrowserPopup()) {
       setFallbackOpen(true);
-      setNotice('Não foi possível abrir a janela PiP. O mini-timer abriu nesta página.');
+      setNotice('O navegador bloqueou a janela flutuante. O mini-timer abriu nesta página.');
     }
   };
 
@@ -135,8 +148,14 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
 
   return (
     <>
-      <button type="button" className="mini-timer-launch" onClick={openMiniTimer}>
-        Abrir mini-timer flutuante
+      <button
+        type="button"
+        className="mini-timer-launch"
+        aria-label="Abrir mini-timer flutuante"
+        data-tooltip="Pop out timer"
+        onClick={openMiniTimer}
+      >
+        <LuPictureInPicture2 aria-hidden="true" />
       </button>
       {notice && <p className="mini-timer-notice" role="status">{notice}</p>}
       {fallbackOpen && createPortal(
@@ -145,9 +164,9 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
         </div>,
         document.body
       )}
-      {pipWindow && !pipWindow.closed && createPortal(
-        <MiniTimerPanel {...panelProps} onClose={closePip} />,
-        pipWindow.document.body
+      {externalWindow && !externalWindow.closed && createPortal(
+        <MiniTimerPanel {...panelProps} onClose={closeExternalWindow} />,
+        externalWindow.document.body
       )}
     </>
   );
