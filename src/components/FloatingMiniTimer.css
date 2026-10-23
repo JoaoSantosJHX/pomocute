@@ -2,13 +2,23 @@
 .pomocute-pip-window body {
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
   min-width: 290px;
   min-height: 100%;
   margin: 0;
   overflow: hidden;
   background: #fff7fb;
 }
-.pomocute-pip-window body { padding: 10px; }
+.pomocute-pip-window body { display: grid; padding: 10px; }
+
+.pomocute-pip-window .mini-timer-panel {
+  display: flex;
+  min-height: calc(100vh - 20px);
+  flex-direction: column;
+}
+.pomocute-pip-window .mini-timer-main {
+  flex: 1;
+}
 
 .mini-timer-launch {
   position: relative;
