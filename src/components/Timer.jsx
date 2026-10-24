@@ -105,6 +105,9 @@ export default function Timer({ onSceneAction }) {
   }, [isFocusMode]);
 
   return <>
+    <header className="app-header">
+      <h1>Pomocute</h1>
+    </header>
     <main
     className={`timer-card${isFocusMode ? ' timer-card--focus' : ''}${showFocusDetails ? ' timer-card--details-visible' : ''}${musicEnergy > .03 ? ' timer-card--music-reactive' : ''}${externalPlayback ? ' timer-card--embed-reactive' : ''}`}
     style={{ '--music-energy': musicEnergy }}
@@ -120,7 +123,6 @@ export default function Timer({ onSceneAction }) {
       </svg>
     </div>
     <div className="timer-expanded">
-      <h1 className="app-title">Pomocute</h1>
       <div className="tabs" role="group" aria-label="Tipo de sessão">
         {Object.keys(modes).map(key => <button key={key} className={'tab-button ' + (mode === key ? 'active' : '')}
           aria-pressed={mode === key} disabled={status === 'running' || status === 'paused'}
