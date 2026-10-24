@@ -46,11 +46,21 @@ test('compacta o card durante uma sessão ativa e permite navegar entre faixas',
   expect(card).toHaveClass('timer-card--details-visible');
   fireEvent.mouseLeave(card);
   expect(card).not.toHaveClass('timer-card--details-visible');
-  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/lofi');
+  click('Abrir menu de música');
+  expect(screen.getByRole('button', { name: /Lofi Chill Beats/ })).toHaveClass('is-selected');
   click('Próxima faixa');
-  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/jazzradio');
+  expect(screen.getByRole('button', { name: /Jazz Vibes/ })).toHaveClass('is-selected');
   click('Faixa anterior');
-  expect(screen.getByLabelText('Escolher trilha:')).toHaveValue('https://stream.laut.fm/lofi');
+  expect(screen.getByRole('button', { name: /Lofi Chill Beats/ })).toHaveClass('is-selected');
+});
+
+test('reduz o anel circular de progresso junto com o tempo da sessão', () => {
+  render(<App />);
+  const ring = screen.getByRole('progressbar', { name: 'Progresso do timer' });
+  expect(ring).toHaveAttribute('aria-valuenow', '100');
+  click('Começar');
+  act(() => jest.advanceTimersByTime(150000));
+  expect(ring).toHaveAttribute('aria-valuenow', '90');
 });
 
 test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
@@ -85,9 +95,24 @@ test('restaura sessão ativa após recarga', () => {
 test('mostra falha do player sem afetar o timer', async () => {
   HTMLMediaElement.prototype.play.mockRejectedValue(new Error('offline'));
   render(<App />);
+  click('Abrir menu de música');
   await act(async () => click('Tocar música'));
   expect(screen.getByText(/Música indisponível/)).toBeInTheDocument();
   expect(screen.getByRole('timer')).toHaveTextContent('25:00');
+});
+
+test('aceita um link do YouTube e abre o player externo', () => {
+  render(<App />);
+  click('Abrir menu de música');
+  fireEvent.change(screen.getByLabelText('Link do YouTube ou Spotify'), {
+    target: { value: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
+  });
+  click('Adicionar link');
+  expect(screen.getByLabelText('Player youtube')).toBeInTheDocument();
+  expect(screen.getByTitle('Vídeo do YouTube')).toHaveAttribute('src', expect.stringContaining('M7lc1UVf-VE'));
+  expect(document.querySelector('.timer-card')).toHaveClass('timer-card--embed-reactive');
+  click('Fechar player externo');
+  expect(document.querySelector('.timer-card')).not.toHaveClass('timer-card--embed-reactive');
 });
 
 test('quarta conclusão sugere pausa longa e recarga não duplica o contador', () => {
