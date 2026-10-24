@@ -4,7 +4,7 @@ import { playClick } from './ClickSound';
 
 const tracks = [
   { name: 'Lofi Chill Beats', url: 'https://stream.laut.fm/lofi' },
-  { name: 'Jazz Vibes', url: 'https://stream.laut.fm/jazzradio' },
+  { name: 'Jazz Vibes', url: 'https://stream.laut.fm/jazz' },
   { name: 'Anime Lofi', url: 'https://stream.laut.fm/animefm' },
 ];
 const linksStorageKey = 'pomocute-music-links-v1';
@@ -46,15 +46,12 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   const audioRef = useRef(null);
   const request = useRef(0);
   const shouldResume = useRef(false);
-  const analyser = useRef(null);
-  const animationFrame = useRef(null);
-  const lastEnergyUpdate = useRef(0);
   const track = tracks[trackIndex];
 
   useEffect(() => () => {
     request.current += 1;
-    if (animationFrame.current) window.cancelAnimationFrame(animationFrame.current);
-  }, []);
+    onEnergyChange?.(0);
+  }, [onEnergyChange]);
   useEffect(() => { try { localStorage.setItem(linksStorageKey, JSON.stringify(customLinks)); } catch (_) {} }, [customLinks]);
   useEffect(() => { onExternalPlayback?.(Boolean(activeEmbed)); }, [activeEmbed, onExternalPlayback]);
   useEffect(() => {
@@ -73,33 +70,6 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     if (state === 'playing') { audio.pause(); onEnergyChange?.(0); setState('paused'); return; }
     setState('loading');
     try { await audio.play(); if (request.current === id) setState('playing'); } catch (_) { if (request.current === id) setState('error'); }
-  };
-  const startVisualizer = () => {
-    if (!onEnergyChange || analyser.current || !audioRef.current || !window.AudioContext) return;
-    try {
-      const context = new window.AudioContext();
-      const source = context.createMediaElementSource(audioRef.current);
-      const nextAnalyser = context.createAnalyser();
-      nextAnalyser.fftSize = 64;
-      source.connect(nextAnalyser);
-      nextAnalyser.connect(context.destination);
-      analyser.current = nextAnalyser;
-      const samples = new Uint8Array(nextAnalyser.frequencyBinCount);
-      const readEnergy = timestamp => {
-        nextAnalyser.getByteFrequencyData(samples);
-        const lowFrequencies = samples.slice(1, 9);
-        const average = lowFrequencies.reduce((total, value) => total + value, 0) / lowFrequencies.length;
-        if (timestamp - lastEnergyUpdate.current > 90) {
-          lastEnergyUpdate.current = timestamp;
-          onEnergyChange(Math.min(.85, Math.max(0, (average - 20) / 180)));
-        }
-        animationFrame.current = window.requestAnimationFrame(readEnergy);
-      };
-      context.resume()?.catch(() => {});
-      animationFrame.current = window.requestAnimationFrame(readEnergy);
-    } catch (_) {
-      onEnergyChange(0);
-    }
   };
   const changeTrack = direction => {
     playClick();
@@ -137,7 +107,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   };
 
   return <>
-    <audio ref={audioRef} src={track.url} preload="none" onError={() => { request.current += 1; onEnergyChange?.(0); setState('error'); }} onPlay={event => { event.currentTarget.volume = volume / 100; startVisualizer(); }} />
+    <audio ref={audioRef} src={track.url} preload="none" onError={() => { request.current += 1; onEnergyChange?.(0); setState('error'); }} onPlay={event => { event.currentTarget.volume = volume / 100; onEnergyChange?.(0); }} />
     <Volume audioRef={audioRef} volume={volume} />
     {activeEmbed && <aside className="embedded-player-window" aria-label={`Player ${activeEmbed.platform}`}>
       <button type="button" className="embedded-player-close" onClick={() => setActiveEmbed(null)} aria-label="Fechar player externo"><FaTimes /></button>

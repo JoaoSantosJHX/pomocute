@@ -15,16 +15,19 @@ const activeVideo = () => document.querySelector('.background-scene--current');
 
 test('alterna a cena de foco a cada nova sessão', () => {
   jest.spyOn(Math, 'random').mockReturnValue(0);
+  const openWindow = jest.spyOn(window, 'open').mockReturnValue(null);
   render(<App />);
   expect(activeBackground()).toBe('/videos/home/home_page1.mp4');
   const homeVideo = activeVideo();
   click('Começar');
   expect(activeBackground()).toBe('/videos/estudo/estudo_3.mp4');
   expect(activeVideo()).not.toBe(homeVideo);
-  click('Encerrar');
+  click('Abrir mini-timer flutuante');
+  click('Encerrar sessão');
   expect(activeBackground()).toBe('/videos/home/home_page2.mp4');
   click('Começar');
   expect(activeBackground()).toBe('/videos/estudo/estudo_girl_studying.mp4');
+  openWindow.mockRestore();
 });
 
 test('alterna a cena de entrada ao retornar para a home', () => {
@@ -36,14 +39,13 @@ test('alterna a cena de entrada ao retornar para a home', () => {
   expect(activeBackground()).toBe('/videos/home/home_page2.mp4');
 });
 
-test('compacta o card durante uma sessão ativa e permite navegar entre faixas', () => {
+test('mantém o card estável durante a sessão e permite navegar entre faixas', () => {
   render(<App />);
   click('Começar');
   const card = document.querySelector('.timer-card');
   expect(card).toHaveClass('timer-card--focus');
-  expect(card).not.toHaveClass('timer-card--details-visible');
   fireEvent.mouseEnter(card);
-  expect(card).toHaveClass('timer-card--details-visible');
+  expect(card).not.toHaveClass('timer-card--details-visible');
   fireEvent.mouseLeave(card);
   expect(card).not.toHaveClass('timer-card--details-visible');
   click('Abrir menu de música');
@@ -64,6 +66,7 @@ test('reduz o anel circular de progresso junto com o tempo da sessão', () => {
 });
 
 test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
+  const openWindow = jest.spyOn(window, 'open').mockReturnValue(null);
   render(<App />);
   click('Começar');
   act(() => jest.advanceTimersByTime(10000));
@@ -71,20 +74,23 @@ test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
   expect(screen.getByRole('timer')).toHaveTextContent('24:50');
   act(() => jest.advanceTimersByTime(60000));
   expect(screen.getByRole('timer')).toHaveTextContent('24:50');
-  click('Retomar'); click('Encerrar');
+  click('Retomar');
+  click('Abrir mini-timer flutuante');
+  click('Encerrar sessão');
   expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
-  expect(screen.getByText('0', { selector: 'strong' })).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(0);
+  openWindow.mockRestore();
 });
 test('sincroniza ao retornar após suspensão e conta apenas uma vez', () => {
   render(<App />); click('Começar');
   act(() => { jest.setSystemTime(Date.now() + 1500001); window.dispatchEvent(new Event('focus')); });
   expect(screen.getByText('Sessão concluída!')).toBeInTheDocument();
-  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
   act(() => jest.advanceTimersByTime(5000));
-  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
-  click('Preparar pausa curta'); click('Começar');
+  expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
+  click('Pausa curta'); click('Começar');
   act(() => jest.advanceTimersByTime(300000));
-  expect(screen.getByText('1', { selector: 'strong' })).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
 });
 test('restaura sessão ativa após recarga', () => {
   const first = render(<App />); click('Começar'); first.unmount();
@@ -119,10 +125,30 @@ test('quarta conclusão sugere pausa longa e recarga não duplica o contador', (
   localStorage.setItem('pomocute-session-v1', JSON.stringify({ mode: 'pomodoro', status: 'running',
     remaining: 1500000, deadline: Date.now() - 1, count: 3 }));
   const first = render(<App />);
-  expect(screen.getByText('4', { selector: 'strong' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Preparar pausa longa' })).toBeInTheDocument();
+  expect(screen.getByText('Escolha uma pausa acima para continuar.')).toBeInTheDocument();
   first.unmount(); render(<App />);
-  expect(screen.getByText('4', { selector: 'strong' })).toBeInTheDocument();
+  expect(screen.getByText('Escolha uma pausa acima para continuar.')).toBeInTheDocument();
+});
+
+test('mantém modos fora da esfera e apenas o controle principal no timer', () => {
+  render(<App />);
+  expect(document.querySelector('.timer-card .session-mode-selector')).not.toBeInTheDocument();
+  expect(document.querySelector('.session-mode-selector')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Começar' })).toHaveClass('timer-toggle');
+  expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument();
+});
+
+test('habilita as pausas quando o foco é pausado', () => {
+  render(<App />);
+  click('Começar');
+  click('Pausar');
+  const shortBreak = screen.getByRole('button', { name: 'Pausa curta' });
+  const longBreak = screen.getByRole('button', { name: 'Pausa longa' });
+  expect(shortBreak).not.toBeDisabled();
+  expect(longBreak).not.toBeDisabled();
+  fireEvent.click(shortBreak);
+  expect(screen.getByText('Pronto para começar')).toBeInTheDocument();
+  expect(screen.getByRole('timer')).toHaveTextContent('05:00');
 });
 test('dados locais inválidos não impedem iniciar uma sessão', () => {
   localStorage.setItem('pomocute-session-v1', '{invalid');
@@ -169,7 +195,7 @@ test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', a
 test('mantém um mini-timer dentro da página quando PiP não está disponível', () => {
   const openWindow = jest.spyOn(window, 'open').mockReturnValue(null);
   render(<App />);
-  expect(screen.queryByRole('button', { name: 'Abrir mini-timer flutuante' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Abrir mini-timer flutuante' })).toBeInTheDocument();
   click('Começar');
   click('Abrir mini-timer flutuante');
 

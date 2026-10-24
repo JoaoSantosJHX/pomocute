@@ -22,21 +22,26 @@
 }
 
 .mini-timer-launch {
-  position: relative;
+  position: fixed;
+  z-index: 4;
+  left: calc(50% + 42px);
+  bottom: 24px;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  margin: 0 auto 12px;
+  width: 58px;
+  height: 58px;
+  margin: 0;
   padding: 0;
-  border: 1px solid rgba(255,255,255,.72);
-  border-radius: 15px;
-  background: rgba(255,255,255,.78);
-  color: #6b3658;
-  box-shadow: 0 5px 16px rgba(83, 39, 66, .12);
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 227, 242, .7), rgba(255, 177, 218, .42));
+  color: #8f2f67;
+  box-shadow: 0 12px 28px rgba(49, 23, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .58);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
   transition: background .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
-.mini-timer-launch svg { width: 23px; height: 23px; stroke-width: 2; }
+.mini-timer-launch svg { width: 25px; height: 25px; stroke-width: 2; }
 .mini-timer-launch::after {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -61,7 +66,7 @@
   white-space: nowrap;
 }
 .mini-timer-launch:hover,
-.mini-timer-launch:focus-visible { color: #bc2f82; background: #fff; box-shadow: 0 8px 20px rgba(83, 39, 66, .18); transform: translateY(-1px); }
+.mini-timer-launch:focus-visible { color: #8f2f67; background: rgba(255, 239, 248, .84); box-shadow: 0 12px 28px rgba(49, 23, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .58); transform: translateY(-2px); }
 .mini-timer-launch:hover::after,
 .mini-timer-launch:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
 
