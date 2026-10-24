@@ -529,24 +529,26 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 /* Contador circular inspirado no anel de progresso do Pomodoro Timer. */
 .timer-card {
   display: flex;
-  width: min(500px, calc(100vw - 32px));
+  width: min(390px, calc(100vw - 32px));
   max-width: none;
   aspect-ratio: 1;
-  padding: 54px;
+  padding: 40px;
   border-radius: 50%;
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
   transform: scale(calc(1 + var(--music-energy, 0) * .022));
-  transition: width .25s ease, padding .25s ease, transform .12s ease;
+  border: 0;
+  background: radial-gradient(circle at 32% 26%, rgba(255, 231, 244, .4), rgba(195, 174, 247, .2) 54%, rgba(110, 88, 172, .14));
+  transition: transform .12s ease;
 }
 .timer-card > :not(.timer-progress-ring) { position: relative; z-index: 1; }
-.timer-progress-ring { position: absolute; inset: 14px; z-index: 0; pointer-events: none; }
+.timer-progress-ring { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .timer-progress-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
-.timer-progress-ring circle { fill: none; stroke-width: 3.6; }
-.timer-progress-ring__track { stroke: rgba(255, 255, 255, .22); }
-.timer-progress-ring__value { stroke: #ce3e94; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255, 222, 245, .6)); transition: stroke-dashoffset .25s linear; }
-.timer-card .timer-display { margin: 14px 0 20px; font-size: clamp(4.5rem, 12vw, 6.1rem); line-height: .95; }
+.timer-progress-ring circle { fill: none; stroke-width: 2.4; }
+.timer-progress-ring__track { stroke: rgba(255, 255, 255, .2); }
+.timer-progress-ring__value { stroke: url(#timer-ring-gradient); stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255, 222, 245, .6)); transition: stroke-dashoffset .25s linear; }
+.timer-card .timer-display { margin: 12px 0 18px; font-size: clamp(3.8rem, 8vw, 5rem); line-height: .95; }
 .app-header {
   position: fixed;
   z-index: 2;
@@ -562,6 +564,39 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   font-weight: 750;
   letter-spacing: -.035em;
 }
+.session-mode-selector {
+  position: fixed;
+  z-index: 2;
+  top: 110px;
+  left: 50%;
+  display: flex;
+  justify-content: center;
+  gap: clamp(14px, 3vw, 36px);
+  transform: translateX(-50%);
+}
+.session-mode-selector button {
+  padding: 7px 2px 11px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: rgba(255, 255, 255, .65);
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+  font-size: clamp(.82rem, 1.4vw, 1rem);
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .18s ease, border-color .18s ease;
+}
+.session-mode-selector button:hover:not(:disabled),
+.session-mode-selector button:focus-visible { color: #fff; }
+.session-mode-selector button.active {
+  border-color: #e0b7ff;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(32, 18, 60, .6);
+}
+.session-mode-selector button:disabled { cursor: default; }
 .timer-card .tabs { gap: 8px; margin-bottom: 10px; }
 .timer-card .tab-button {
   min-height: 36px;
@@ -586,24 +621,101 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   font-size: .84rem;
   white-space: nowrap;
 }
-.timer-card--focus { width: min(390px, calc(100vw - 32px)); max-width: none; padding: 42px; }
-.timer-card--focus .timer-display { margin: 8px 0 18px; }
-.timer-card--focus.timer-card--details-visible { width: min(520px, calc(100vw - 32px)); max-width: none; padding: 54px; }
+.timer-card .session-status { margin: 0 0 16px; font-size: .9rem; }
+.timer-toggle {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 12px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 18px;
+  color: #8f2f67;
+  background: linear-gradient(135deg, rgba(255, 227, 242, .7), rgba(255, 177, 218, .42));
+  box-shadow: 0 12px 28px rgba(49, 23, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .58);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease;
+}
+.timer-toggle:hover,
+.timer-toggle:focus-visible { background: rgba(255, 239, 248, .84); transform: scale(1.06); }
+.timer-next-mode { margin: -2px 0 10px; font-size: .78rem; font-weight: 650; }
+.timer-card--focus { width: min(390px, calc(100vw - 32px)); max-width: none; padding: 40px; }
+.timer-card--focus .timer-display { margin: 12px 0 18px; }
 .timer-card--embed-reactive { animation: external-player-bounce 1.05s ease-in-out infinite; }
 @keyframes external-player-bounce {
   0%, 100% { scale: 1; }
   50% { scale: 1.018; }
 }
 
+/* Ações rápidas: tarefas, música e mini-timer compartilham o mesmo vidro. */
+.tasks-dock {
+  position: fixed;
+  z-index: 4;
+  bottom: 24px;
+  left: calc(50% - 100px);
+}
+.tasks-dock__trigger {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 18px;
+  color: #8f2f67;
+  background: linear-gradient(135deg, rgba(255, 227, 242, .7), rgba(255, 177, 218, .42));
+  box-shadow: 0 12px 28px rgba(49, 23, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .58);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  font-size: 1.35rem;
+  cursor: pointer;
+}
+.tasks-dock__trigger:hover,
+.tasks-dock__trigger:focus-visible { background: rgba(255, 239, 248, .84); transform: translateY(-2px); }
+.tasks-menu {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 0;
+  box-sizing: border-box;
+  width: min(330px, calc(100vw - 28px));
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 22px;
+  color: #4b2e2e;
+  background: linear-gradient(145deg, rgba(255, 229, 243, .8), rgba(235, 181, 219, .6));
+  box-shadow: 0 18px 42px rgba(49, 23, 48, .34), inset 0 1px 0 rgba(255, 255, 255, .55);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+.tasks-menu header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.tasks-menu header span { display: block; color: rgba(75, 46, 46, .7); font-size: .67rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.tasks-menu header strong { display: block; margin-top: 3px; font-size: 1rem; }
+.tasks-menu header > button,
+.tasks-menu form button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; color: #71435f; background: rgba(255,255,255,.6); cursor: pointer; }
+.tasks-menu form { display: grid; grid-template-columns: minmax(0, 1fr) 38px; gap: 8px; }
+.tasks-menu input { min-width: 0; padding: 10px 12px; border: 1px solid rgba(255,255,255,.55); border-radius: 12px; color: #4b2e2e; background: rgba(255,255,255,.58); font: inherit; outline: 0; }
+.tasks-menu form button { width: 38px; height: 38px; color: #fff; background: #b83280; }
+.tasks-menu ul { display: grid; gap: 7px; max-height: 180px; margin: 12px 0 0; padding: 0; overflow: auto; list-style: none; }
+.tasks-menu li button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border: 0; border-radius: 11px; color: #4b2e2e; background: rgba(255,255,255,.38); font: inherit; text-align: left; cursor: pointer; }
+.tasks-menu li button svg { color: #b83280; }
+.tasks-menu li button.is-done { color: rgba(75,46,46,.58); text-decoration: line-through; }
+
 @media (max-width: 560px) {
   .app-header { top: 18px; left: 20px; }
+  .session-mode-selector { top: 70px; gap: 14px; }
+  .session-mode-selector button { padding-bottom: 7px; font-size: .76rem; }
   .timer-card,
   .timer-card--focus,
-  .timer-card--focus.timer-card--details-visible { width: min(94vw, 430px); padding: 38px; }
-  .timer-progress-ring { inset: 10px; }
+  .timer-card--focus.timer-card--details-visible { width: min(90vw, 390px); padding: 34px; }
+  .timer-progress-ring { inset: 0; }
   .timer-card .tabs { gap: 6px; }
   .timer-card .tab-button { padding: 8px 10px; font-size: .8rem; }
   .timer-card .timer-display { font-size: clamp(3.7rem, 16vw, 5rem); }
+  .timer-toggle { width: 52px; height: 52px; }
 }
 
 @media (max-width: 560px) {
