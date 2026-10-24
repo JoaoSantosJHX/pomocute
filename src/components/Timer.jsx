@@ -23,10 +23,15 @@ export default function Timer({ onSceneAction }) {
   const [now, setNow] = useState(Date.now);
   const [volume, setVolume] = useState(50);
   const [showFocusDetails, setShowFocusDetails] = useState(false);
+  const [musicEnergy, setMusicEnergy] = useState(0);
+  const [externalPlayback, setExternalPlayback] = useState(false);
   const alerted = useRef(false);
   const { mode, status, remaining, deadline, count } = session;
   const remainingMs = Math.max(0, status === 'running' ? deadline - now : remaining);
   const seconds = Math.ceil(remainingMs / 1000);
+  const durationMs = modes[mode] * 1000;
+  const progress = Math.min(1, Math.max(0, remainingMs / durationMs));
+  const ringCircumference = 2 * Math.PI * 46;
 
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify(session)); } catch (_) {}
@@ -99,13 +104,21 @@ export default function Timer({ onSceneAction }) {
     if (!isFocusMode) setShowFocusDetails(false);
   }, [isFocusMode]);
 
-  return <main
-    className={`timer-card${isFocusMode ? ' timer-card--focus' : ''}${showFocusDetails ? ' timer-card--details-visible' : ''}`}
+  return <>
+    <main
+    className={`timer-card${isFocusMode ? ' timer-card--focus' : ''}${showFocusDetails ? ' timer-card--details-visible' : ''}${musicEnergy > .03 ? ' timer-card--music-reactive' : ''}${externalPlayback ? ' timer-card--embed-reactive' : ''}`}
+    style={{ '--music-energy': musicEnergy }}
     onMouseEnter={() => { if (isFocusMode) setShowFocusDetails(true); }}
     onMouseLeave={() => setShowFocusDetails(false)}
     onFocusCapture={() => { if (isFocusMode) setShowFocusDetails(true); }}
     onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setShowFocusDetails(false); }}
   >
+    <div className="timer-progress-ring" role="progressbar" aria-label="Progresso do timer" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}>
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle className="timer-progress-ring__track" cx="50" cy="50" r="46" />
+        <circle className="timer-progress-ring__value" cx="50" cy="50" r="46" strokeDasharray={ringCircumference} strokeDashoffset={ringCircumference * (1 - progress)} />
+      </svg>
+    </div>
     <div className="timer-expanded">
       <h1 className="app-title">Pomocute</h1>
       <div className="tabs" role="group" aria-label="Tipo de sessão">
@@ -126,17 +139,13 @@ export default function Timer({ onSceneAction }) {
       mode={mode}
       status={status}
       remainingMs={remainingMs}
-      durationMs={modes[mode] * 1000}
+      durationMs={durationMs}
       onToggle={toggle}
       onEnd={end}
     />}
     {status === 'completed' && <button className="tab-button" onClick={() => selectMode(nextMode)}>Preparar {labels[nextMode].toLowerCase()}</button>}
     <p className="timer-expanded">Sessões de foco concluídas: <strong>{count}</strong></p>
-    <AudioPlayer volume={volume} />
-    <div className="timer-expanded volume-control">
-      <label htmlFor="music-volume">Volume da música:</label>
-      <input id="music-volume" type="range" min="0" max="100" value={volume}
-        onChange={event => setVolume(Number(event.target.value))} className="volume-slider" />
-    </div>
-  </main>;
+    </main>
+    <AudioPlayer volume={volume} onVolumeChange={setVolume} onEnergyChange={setMusicEnergy} onExternalPlayback={setExternalPlayback} />
+  </>;
 }
