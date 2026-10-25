@@ -4,6 +4,7 @@ import FloatingMiniTimer from './FloatingMiniTimer';
 import TasksButton from './TasksButton';
 import { playClick } from './ClickSound';
 import { FaPause, FaPlay } from 'react-icons/fa';
+import AccountControls from './AccountControls';
 
 const modes = { pomodoro: 1500, short: 300, long: 900 };
 const labels = { pomodoro: 'Pomodoro', short: 'Pausa curta', long: 'Pausa longa' };
@@ -103,6 +104,7 @@ export default function Timer({ onSceneAction }) {
   return <>
     <header className="app-header">
       <h1>Pomocute</h1>
+      <AccountControls />
     </header>
     <nav className="session-mode-selector" aria-label="Tipo de sessão">
       {Object.keys(modes).map(key => <button key={key} className={mode === key ? 'active' : ''}

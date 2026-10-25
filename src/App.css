@@ -739,3 +739,34 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .background-scene--current, .background-scene--current.is-ready { opacity: 1; }
   .background-scene--previous, .background-scene--previous.is-fading { opacity: 0; }
 }
+
+/* Conta, perfil e preferências */
+.app-header { display: flex; align-items: center; justify-content: space-between; }
+.account-controls { position: fixed; z-index: 8; top: 22px; right: 30px; display: flex; gap: 10px; }
+.account-icon-button { display: grid; place-items: center; width: 42px; height: 42px; padding: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.5); border-radius: 14px; color: #fff; background: linear-gradient(135deg, rgba(55,38,92,.56), rgba(202,128,191,.4)); box-shadow: 0 8px 22px rgba(18,11,44,.28), inset 0 1px rgba(255,255,255,.25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); font-size: 1.2rem; cursor: pointer; transition: transform .18s ease, background .18s ease; }
+.account-icon-button:hover, .account-icon-button:focus-visible { transform: translateY(-2px); background: rgba(168,118,217,.68); }
+.account-icon-button img { width: 100%; height: 100%; object-fit: cover; }
+.account-popover { position: absolute; top: 52px; right: 0; box-sizing: border-box; width: min(370px, calc(100vw - 28px)); padding: 24px; border: 1px solid rgba(255,255,255,.52); border-radius: 24px; color: #492c45; background: linear-gradient(145deg, rgba(255,238,248,.94), rgba(226,185,240,.78)); box-shadow: 0 22px 54px rgba(23,11,45,.44), inset 0 1px rgba(255,255,255,.75); backdrop-filter: blur(22px) saturate(125%); -webkit-backdrop-filter: blur(22px) saturate(125%); }
+.account-popover__close { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; color: #754363; background: rgba(255,255,255,.68); cursor: pointer; }
+.account-popover__eyebrow { display: block; margin-bottom: 5px; color: rgba(89,47,79,.72); font-size: .65rem; font-weight: 850; letter-spacing: .14em; }
+.account-popover h2 { margin: 0; font-size: 1.35rem; }
+.account-popover > p { margin: 7px 0 18px; color: rgba(73,44,69,.76); font-size: .9rem; line-height: 1.4; }
+.account-google, .account-submit, .account-signout { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; border: 0; border-radius: 13px; font: inherit; font-weight: 750; cursor: pointer; }
+.account-google { color: #4b2e2e; background: rgba(255,255,255,.83); box-shadow: inset 0 1px rgba(255,255,255,.9); }
+.account-google svg { color: #d94c3f; }
+.account-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: rgba(73,44,69,.6); font-size: .75rem; font-weight: 700; }
+.account-divider::before,.account-divider::after { flex: 1; height: 1px; background: rgba(103,55,100,.2); content: ''; }
+.account-popover form { display: grid; gap: 11px; }
+.account-popover label { display: grid; gap: 5px; color: rgba(73,44,69,.84); font-size: .77rem; font-weight: 750; }
+.account-popover input { min-height: 40px; box-sizing: border-box; padding: 0 11px; border: 1px solid rgba(176,92,151,.34); border-radius: 11px; color: #482f46; background: rgba(255,255,255,.63); font: inherit; outline-color: #ba4b91; }
+.account-submit { margin-top: 4px; color: #fff; background: linear-gradient(135deg, #c22d83, #a550d0); box-shadow: 0 9px 18px rgba(139,44,118,.24); }
+.account-submit:disabled { opacity: .65; cursor: wait; }
+.account-switch { display: block; margin: 14px auto 0; padding: 0; border: 0; color: #95406f; background: none; font: inherit; font-size: .8rem; font-weight: 750; text-decoration: underline; cursor: pointer; }
+.account-message { margin: 0; color: #9a2857; font-size: .79rem; font-weight: 650; }
+.account-config-note { margin: 14px 0 0; color: rgba(73,44,69,.65); font-size: .72rem; line-height: 1.4; }
+.account-summary { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+.account-summary img,.account-summary > svg { width: 46px; height: 46px; border-radius: 50%; color: #9d4a9a; background: rgba(255,255,255,.65); object-fit: cover; }
+.account-summary strong,.account-summary span { display: block; }
+.account-summary span { margin-top: 3px; color: rgba(73,44,69,.68); font-size: .78rem; }
+.account-signout { color: #8b2c68; background: rgba(255,255,255,.66); }
+@media (max-width: 560px) { .account-controls { top: 14px; right: 16px; gap: 7px; } .account-icon-button { width: 38px; height: 38px; border-radius: 12px; } .account-popover { top: 47px; padding: 20px; } }
