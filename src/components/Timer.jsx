@@ -66,7 +66,7 @@ export default function Timer({ onSceneAction }) {
       recordFocusSession(mode, modes[mode]).catch(() => {});
       new Audio('/assets/alert.mp3').play()?.catch(() => {});
     }
-  }, [status]);
+  }, [status, mode]);
 
   const selectMode = next => {
     playClick();
