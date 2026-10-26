@@ -622,12 +622,13 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   white-space: nowrap;
 }
 .timer-card .session-status { margin: 0 0 16px; font-size: .9rem; }
+.timer-actions { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 auto 12px; }
 .timer-toggle {
   display: grid;
   place-items: center;
   width: 58px;
   height: 58px;
-  margin: 0 auto 12px;
+  margin: 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, .48);
   border-radius: 18px;
@@ -642,6 +643,9 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 }
 .timer-toggle:hover,
 .timer-toggle:focus-visible { background: rgba(255, 239, 248, .84); transform: scale(1.06); }
+.timer-reset { font-size: 1.05rem; opacity: .92; }
+.timer-reset:hover,
+.timer-reset:focus-visible { opacity: 1; }
 .timer-next-mode { margin: -2px 0 10px; font-size: .78rem; font-weight: 650; }
 .timer-card--focus { width: min(390px, calc(100vw - 32px)); max-width: none; padding: 40px; }
 .timer-card--focus .timer-display { margin: 12px 0 18px; }
@@ -716,6 +720,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .timer-card .tab-button { padding: 8px 10px; font-size: .8rem; }
   .timer-card .timer-display { font-size: clamp(3.7rem, 16vw, 5rem); }
   .timer-toggle { width: 52px; height: 52px; }
+
 }
 
 @media (max-width: 560px) {
