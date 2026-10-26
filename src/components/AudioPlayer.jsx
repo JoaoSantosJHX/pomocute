@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaMusic, FaPause, FaPlay, FaPlus, FaSpotify, FaStepBackward, FaStepForward, FaTimes, FaTrash, FaVolumeUp, FaYoutube } from 'react-icons/fa';
 import { playClick } from './ClickSound';
+import { getStoredUser } from '../services/auth';
+import { createMusicLink, listMusicLinks, removeMusicLink } from '../services/data';
 
 const tracks = [
   { name: 'Lofi Chill Beats', url: 'https://stream.laut.fm/lofi' },
@@ -43,6 +45,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   const [linkError, setLinkError] = useState('');
   const [customLinks, setCustomLinks] = useState(loadLinks);
   const [activeEmbed, setActiveEmbed] = useState(null);
+  const [user, setUser] = useState(getStoredUser);
   const audioRef = useRef(null);
   const request = useRef(0);
   const shouldResume = useRef(false);
@@ -53,6 +56,30 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     onEnergyChange?.(0);
   }, [onEnergyChange]);
   useEffect(() => { try { localStorage.setItem(linksStorageKey, JSON.stringify(customLinks)); } catch (_) {} }, [customLinks]);
+  useEffect(() => {
+    const syncUser = event => setUser(event.detail?.user || getStoredUser());
+    window.addEventListener('pomocute:auth-change', syncUser);
+    return () => window.removeEventListener('pomocute:auth-change', syncUser);
+  }, []);
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    const syncLinks = async () => {
+      try {
+        const remoteRows = await listMusicLinks();
+        if (!active || !remoteRows) return;
+        const remoteLinks = remoteRows.map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }));
+        const remoteUrls = new Set(remoteLinks.map(link => link.url));
+        const localOnly = loadLinks().filter(link => !remoteUrls.has(link.url));
+        const created = await Promise.all(localOnly.map(createMusicLink));
+        if (active) setCustomLinks([...remoteLinks, ...created.filter(Boolean).map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }))]);
+      } catch (_) {
+        // Mantém os links do navegador caso a sincronização não esteja disponível.
+      }
+    };
+    syncLinks();
+    return () => { active = false; };
+  }, [user?.id]);
   useEffect(() => { onExternalPlayback?.(Boolean(activeEmbed)); }, [activeEmbed, onExternalPlayback]);
   useEffect(() => {
     if (!shouldResume.current) return;
@@ -95,15 +122,26 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     event.preventDefault();
     const link = parseEmbedLink(linkInput);
     if (!link) { setLinkError('Use um link válido do YouTube ou Spotify.'); return; }
-    setCustomLinks(previous => previous.some(item => item.id === link.id) ? previous : [...previous, link]);
+    const existing = customLinks.find(item => item.url === link.url);
+    const localLink = { ...link, id: `local-${link.id}-${Date.now()}` };
+    if (!existing) {
+      setCustomLinks(previous => [...previous, localLink]);
+      if (user?.id) {
+        createMusicLink(localLink).then(saved => {
+          if (saved) setCustomLinks(previous => previous.map(item => item.id === localLink.id ? { id: saved.id, platform: saved.platform, title: saved.title, url: saved.source_url, embedUrl: saved.embed_url } : item));
+        }).catch(() => {});
+      }
+    }
     setLinkInput('');
     setLinkError('');
-    setActiveEmbed(link);
+    setActiveEmbed(existing || localLink);
     setIsMenuOpen(false);
   };
   const removeLink = id => {
+    const link = customLinks.find(item => item.id === id);
     setCustomLinks(previous => previous.filter(link => link.id !== id));
     setActiveEmbed(previous => previous?.id === id ? null : previous);
+    if (user?.id && link && !id.startsWith('local-')) removeMusicLink(id).catch(() => {});
   };
 
   return <>

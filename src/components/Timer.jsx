@@ -5,6 +5,7 @@ import TasksButton from './TasksButton';
 import { playClick } from './ClickSound';
 import { FaPause, FaPlay, FaStop } from 'react-icons/fa';
 import AccountControls from './AccountControls';
+import { recordFocusSession } from '../services/data';
 
 const modes = { pomodoro: 1500, short: 300, long: 900 };
 const labels = { pomodoro: 'Pomodoro', short: 'Pausa curta', long: 'Pausa longa' };
@@ -62,6 +63,7 @@ export default function Timer({ onSceneAction }) {
     if (status !== 'completed') { alerted.current = false; return; }
     if (!alerted.current) {
       alerted.current = true;
+      recordFocusSession(mode, modes[mode]).catch(() => {});
       new Audio('/assets/alert.mp3').play()?.catch(() => {});
     }
   }, [status]);
