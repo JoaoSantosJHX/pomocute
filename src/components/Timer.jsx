@@ -3,7 +3,7 @@ import AudioPlayer from './AudioPlayer';
 import FloatingMiniTimer from './FloatingMiniTimer';
 import TasksButton from './TasksButton';
 import { playClick } from './ClickSound';
-import { FaPause, FaPlay } from 'react-icons/fa';
+import { FaPause, FaPlay, FaStop } from 'react-icons/fa';
 import AccountControls from './AccountControls';
 
 const modes = { pomodoro: 1500, short: 300, long: 900 };
@@ -86,6 +86,17 @@ export default function Timer({ onSceneAction }) {
       return { ...previous, status: 'running', remaining: left, deadline: time + left };
     });
   };
+  const reset = () => {
+    playClick();
+    const time = Date.now();
+    setNow(time);
+    setSession(previous => ({
+      ...previous,
+      status: 'ready',
+      remaining: modes[previous.mode] * 1000,
+      deadline: null,
+    }));
+  };
   const end = () => {
     playClick();
     const time = Date.now();
@@ -132,15 +143,26 @@ export default function Timer({ onSceneAction }) {
     <div className="timer-display" role="timer" aria-label="Tempo restante" aria-live="off">
       {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
     </div>
-    <button
-      type="button"
-      className="timer-toggle"
-      onClick={toggle}
-      aria-label={status === 'running' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Começar'}
-      title={status === 'running' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Começar'}
-    >
-      {status === 'running' ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
-    </button>
+    <div className="timer-actions">
+      <button
+        type="button"
+        className="timer-toggle"
+        onClick={toggle}
+        aria-label={status === 'running' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Começar'}
+        title={status === 'running' ? 'Pausar' : status === 'paused' ? 'Retomar' : 'Começar'}
+      >
+        {status === 'running' ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+      </button>
+      <button
+        type="button"
+        className="timer-toggle timer-reset"
+        onClick={reset}
+        aria-label={`Reiniciar ${labels[mode]}`}
+        title={`Reiniciar ${labels[mode]}`}
+      >
+        <FaStop aria-hidden="true" />
+      </button>
+    </div>
     {status === 'completed' && <p className="timer-next-mode">Escolha uma pausa acima para continuar.</p>}
     </main>
     <FloatingMiniTimer
