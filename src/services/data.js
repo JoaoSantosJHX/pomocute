@@ -25,6 +25,10 @@ export async function createMusicLink(link) {
   const rows = await supabaseDataRequest('music_links', { method: 'POST', body: { user_id: user.id, platform: link.platform, title: link.title, source_url: link.url, embed_url: link.embedUrl } });
   return rows?.[0] || null;
 }
+export async function updateMusicLink(id, title) {
+  const rows = await supabaseDataRequest(`music_links?id=eq.${encode(id)}`, { method: 'PATCH', body: { title } });
+  return rows?.[0] || null;
+}
 export async function removeMusicLink(id) {
   return supabaseDataRequest(`music_links?id=eq.${encode(id)}`, { method: 'DELETE' });
 }

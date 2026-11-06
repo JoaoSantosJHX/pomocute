@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FaMusic, FaPause, FaPlay, FaPlus, FaSpotify, FaStepBackward, FaStepForward, FaTimes, FaTrash, FaVolumeUp, FaYoutube } from 'react-icons/fa';
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
-import { createMusicLink, listMusicLinks, removeMusicLink } from '../services/data';
+import { createMusicLink, listMusicLinks, removeMusicLink, updateMusicLink } from '../services/data';
 
 const tracks = [
   { name: 'Lofi Chill Beats', url: 'https://stream.laut.fm/lofi' },
@@ -10,6 +10,7 @@ const tracks = [
   { name: 'Anime Lofi', url: 'https://stream.laut.fm/animefm' },
 ];
 const linksStorageKey = 'pomocute-music-links-v1';
+const genericYoutubeTitle = 'Vídeo do YouTube';
 
 function loadLinks() {
   try {
@@ -22,12 +23,12 @@ function parseEmbedLink(rawUrl) {
   let url;
   try { url = new URL(rawUrl.trim()); } catch (_) { return null; }
   const host = url.hostname.replace(/^www\./, '').toLowerCase();
-  if (host === 'youtu.be' || host.endsWith('youtube.com')) {
+  if (host === 'youtu.be' || host === 'youtube.com' || host.endsWith('.youtube.com')) {
     const videoId = host === 'youtu.be'
       ? url.pathname.split('/').filter(Boolean)[0]
       : url.searchParams.get('v') || url.pathname.match(/\/(embed|shorts|live)\/([^/?]+)/)?.[2];
     if (!videoId) return null;
-    return { id: `youtube-${videoId}`, platform: 'youtube', title: 'Vídeo do YouTube', url: url.toString(), embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0` };
+    return { id: `youtube-${videoId}`, platform: 'youtube', title: genericYoutubeTitle, url: url.toString(), embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0` };
   }
   if (host === 'open.spotify.com') {
     const [kind, id] = url.pathname.split('/').filter(Boolean);
@@ -35,6 +36,23 @@ function parseEmbedLink(rawUrl) {
     return { id: `spotify-${kind}-${id}`, platform: 'spotify', title: `Spotify: ${kind === 'track' ? 'faixa' : kind === 'playlist' ? 'playlist' : kind}`, url: url.toString(), embedUrl: `https://open.spotify.com/embed/${kind}/${id}` };
   }
   return null;
+}
+
+function needsYoutubeTitle(link) {
+  return link?.platform === 'youtube' && (!link.title || link.title === genericYoutubeTitle);
+}
+
+async function resolveYoutubeTitle(link) {
+  if (!needsYoutubeTitle(link) || typeof fetch !== 'function') return link;
+  try {
+    const response = await fetch(`/api/youtube-title?url=${encodeURIComponent(link.url)}`);
+    if (!response.ok) return link;
+    const data = await response.json();
+    const title = typeof data?.title === 'string' ? data.title.trim().replace(/\s+/g, ' ') : '';
+    return title ? { ...link, title: title.slice(0, 280) } : link;
+  } catch (_) {
+    return link;
+  }
 }
 
 export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, onExternalPlayback }) {
@@ -57,6 +75,16 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   }, [onEnergyChange]);
   useEffect(() => { try { localStorage.setItem(linksStorageKey, JSON.stringify(customLinks)); } catch (_) {} }, [customLinks]);
   useEffect(() => {
+    let active = true;
+    const hydrateLocalTitles = async () => {
+      const localLinks = loadLinks();
+      const hydratedLinks = await Promise.all(localLinks.map(resolveYoutubeTitle));
+      if (active && hydratedLinks.some((link, index) => link.title !== localLinks[index].title)) setCustomLinks(hydratedLinks);
+    };
+    hydrateLocalTitles();
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
     const syncUser = event => setUser(event.detail?.user || getStoredUser());
     window.addEventListener('pomocute:auth-change', syncUser);
     return () => window.removeEventListener('pomocute:auth-change', syncUser);
@@ -69,10 +97,15 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
         const remoteRows = await listMusicLinks();
         if (!active || !remoteRows) return;
         const remoteLinks = remoteRows.map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }));
+        const hydratedRemoteLinks = await Promise.all(remoteLinks.map(resolveYoutubeTitle));
+        hydratedRemoteLinks.forEach((link, index) => {
+          if (link.title !== remoteLinks[index].title) updateMusicLink(link.id, link.title).catch(() => {});
+        });
         const remoteUrls = new Set(remoteLinks.map(link => link.url));
         const localOnly = loadLinks().filter(link => !remoteUrls.has(link.url));
-        const created = await Promise.all(localOnly.map(createMusicLink));
-        if (active) setCustomLinks([...remoteLinks, ...created.filter(Boolean).map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }))]);
+        const hydratedLocalOnly = await Promise.all(localOnly.map(resolveYoutubeTitle));
+        const created = await Promise.all(hydratedLocalOnly.map(createMusicLink));
+        if (active) setCustomLinks([...hydratedRemoteLinks, ...created.filter(Boolean).map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }))]);
       } catch (_) {
         // Mantém os links do navegador caso a sincronização não esteja disponível.
       }
@@ -126,11 +159,19 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     const localLink = { ...link, id: `local-${link.id}-${Date.now()}` };
     if (!existing) {
       setCustomLinks(previous => [...previous, localLink]);
-      if (user?.id) {
-        createMusicLink(localLink).then(saved => {
+      const enrichAndSave = async () => {
+        const titledLink = await resolveYoutubeTitle(localLink);
+        if (titledLink.title !== localLink.title) {
+          setCustomLinks(previous => previous.map(item => item.id === localLink.id ? titledLink : item));
+          setActiveEmbed(previous => previous?.id === localLink.id ? titledLink : previous);
+        }
+        if (!user?.id) return;
+        try {
+          const saved = await createMusicLink(titledLink);
           if (saved) setCustomLinks(previous => previous.map(item => item.id === localLink.id ? { id: saved.id, platform: saved.platform, title: saved.title, url: saved.source_url, embedUrl: saved.embed_url } : item));
-        }).catch(() => {});
-      }
+        } catch (_) {}
+      };
+      enrichAndSave();
     }
     setLinkInput('');
     setLinkError('');
@@ -160,7 +201,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
         <div className="music-menu__links">
           <span>Seus links</span>
           {customLinks.length === 0 && <p>Adicione um link do YouTube ou Spotify.</p>}
-          {customLinks.map(link => <div key={link.id} className="music-menu__link"><button type="button" onClick={() => { setActiveEmbed(link); setIsMenuOpen(false); }}>{link.platform === 'youtube' ? <FaYoutube aria-hidden="true" /> : <FaSpotify aria-hidden="true" />}<span>{link.title}</span></button><button type="button" onClick={() => removeLink(link.id)} aria-label={`Remover ${link.title}`}><FaTrash /></button></div>)}
+          {customLinks.map(link => <div key={link.id} className="music-menu__link"><button type="button" title={link.title} onClick={() => { setActiveEmbed(link); setIsMenuOpen(false); }}>{link.platform === 'youtube' ? <FaYoutube aria-hidden="true" /> : <FaSpotify aria-hidden="true" />}<span>{link.title}</span></button><button type="button" onClick={() => removeLink(link.id)} aria-label={`Remover ${link.title}`}><FaTrash /></button></div>)}
         </div>
         <form className="music-menu__add-link" onSubmit={addLink}><label className="sr-only" htmlFor="music-link">Link do YouTube ou Spotify</label><input id="music-link" value={linkInput} onChange={event => { setLinkInput(event.target.value); setLinkError(''); }} placeholder="Cole um link do YouTube ou Spotify" /><button type="submit" aria-label="Adicionar link"><FaPlus /></button></form>
         {linkError && <p className="music-menu__error" role="alert">{linkError}</p>}
