@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import App from './App';
 beforeEach(() => {
   delete window.documentPictureInPicture;
@@ -119,6 +119,31 @@ test('aceita um link do YouTube e abre o player externo', () => {
   expect(document.querySelector('.timer-card')).toHaveClass('timer-card--embed-reactive');
   click('Fechar player externo');
   expect(document.querySelector('.timer-card')).not.toHaveClass('timer-card--embed-reactive');
+});
+
+test('herda e mostra o título real de um vídeo do YouTube', async () => {
+  const previousFetch = global.fetch;
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ title: 'Lofi para uma tarde tranquila' }),
+  });
+  try {
+    render(<App />);
+    click('Abrir menu de música');
+    fireEvent.change(screen.getByLabelText('Link do YouTube ou Spotify'), {
+      target: { value: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
+    });
+    click('Adicionar link');
+    await waitFor(() => {
+      expect(screen.getByTitle('Lofi para uma tarde tranquila')).toHaveAttribute('src', expect.stringContaining('M7lc1UVf-VE'));
+    });
+    click('Fechar player externo');
+    click('Abrir menu de música');
+    expect(screen.getByText('Lofi para uma tarde tranquila')).toBeInTheDocument();
+  } finally {
+    if (previousFetch === undefined) delete global.fetch;
+    else global.fetch = previousFetch;
+  }
 });
 
 test('quarta conclusão sugere pausa longa e recarga não duplica o contador', () => {

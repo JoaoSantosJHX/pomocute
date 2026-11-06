@@ -13,11 +13,14 @@ alter table public.music_links enable row level security;
 
 drop policy if exists "Usuários veem os próprios links de música" on public.music_links;
 drop policy if exists "Usuários criam os próprios links de música" on public.music_links;
+drop policy if exists "Usuários atualizam os próprios links de música" on public.music_links;
 drop policy if exists "Usuários removem os próprios links de música" on public.music_links;
 
 create policy "Usuários veem os próprios links de música" on public.music_links
   for select using (auth.uid() = user_id);
 create policy "Usuários criam os próprios links de música" on public.music_links
   for insert with check (auth.uid() = user_id);
+create policy "Usuários atualizam os próprios links de música" on public.music_links
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Usuários removem os próprios links de música" on public.music_links
   for delete using (auth.uid() = user_id);

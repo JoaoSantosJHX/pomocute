@@ -48,6 +48,7 @@ create policy "Usuários atualizam as próprias tarefas" on public.tasks for upd
 create policy "Usuários removem as próprias tarefas" on public.tasks for delete using (auth.uid() = user_id);
 create policy "Usuários veem os próprios links de música" on public.music_links for select using (auth.uid() = user_id);
 create policy "Usuários criam os próprios links de música" on public.music_links for insert with check (auth.uid() = user_id);
+create policy "Usuários atualizam os próprios links de música" on public.music_links for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Usuários removem os próprios links de música" on public.music_links for delete using (auth.uid() = user_id);
 create policy "Usuários veem as próprias sessões" on public.focus_sessions for select using (auth.uid() = user_id);
 create policy "Usuários registram as próprias sessões" on public.focus_sessions for insert with check (auth.uid() = user_id);
