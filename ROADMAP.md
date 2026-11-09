@@ -15,7 +15,7 @@ Este roadmap organiza o trabalho por resultados e critérios de saída, sem data
 - Isolamento do cache de tarefas e links de música por conta, sem importar dados de visitante automaticamente no login.
 - Sincronização idempotente por registro, com chave gerada no cliente e reconciliação de tentativas que falharam sem criar duplicatas.
 - Renovação de sessão Supabase e tratamento correto do cadastro que exige confirmação de e-mail.
-- Bloqueio da troca de modo enquanto uma sessão está rodando ou pausada.
+- Bloqueio da troca de modo enquanto uma sessão está em andamento.
 - Foco preso no diálogo de conta/configurações, fechamento por Escape e indicador de foco visível para campos de tarefa e música.
 - Migração versionada para chaves de sincronização, políticas RLS explícitas, permissões mínimas, índices por usuário e teste de isolamento entre contas.
 - Cabeçalhos de segurança no Vercel, metadados básicos da página e pipeline de CI para testes e build.
