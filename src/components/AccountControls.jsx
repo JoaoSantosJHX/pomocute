@@ -129,8 +129,8 @@ export default function AccountControls({
   const google = () => {
     try { signInWithGoogle(); } catch (error) { setMessage(error.message); }
   };
-  const logout = async () => {
-    await signOut();
+  const logout = () => {
+    signOut();
     setUser(null);
     setPanel(null);
   };
