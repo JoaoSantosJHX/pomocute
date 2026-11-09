@@ -3,6 +3,7 @@ import { FaMusic, FaPause, FaPlay, FaPlus, FaSpotify, FaStepBackward, FaStepForw
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
 import { createMusicLink, listMusicLinks, removeMusicLink, updateMusicLink } from '../services/data';
+import { useI18n } from '../i18n';
 
 const tracks = [
   { name: 'Lofi Chill Beats', url: 'https://stream.laut.fm/lofi' },
@@ -56,6 +57,7 @@ async function resolveYoutubeTitle(link) {
 }
 
 export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, onExternalPlayback }) {
+  const { t } = useI18n();
   const [trackIndex, setTrackIndex] = useState(0);
   const [state, setState] = useState('paused');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -154,7 +156,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   const addLink = event => {
     event.preventDefault();
     const link = parseEmbedLink(linkInput);
-    if (!link) { setLinkError('Use um link válido do YouTube ou Spotify.'); return; }
+    if (!link) { setLinkError(t('music.invalid')); return; }
     const existing = customLinks.find(item => item.url === link.url);
     const localLink = { ...link, id: `local-${link.id}-${Date.now()}` };
     if (!existing) {
@@ -189,26 +191,26 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     <audio ref={audioRef} src={track.url} preload="none" onError={() => { request.current += 1; onEnergyChange?.(0); setState('error'); }} onPlay={event => { event.currentTarget.volume = volume / 100; onEnergyChange?.(0); }} />
     <Volume audioRef={audioRef} volume={volume} />
     {activeEmbed && <aside className="embedded-player-window" aria-label={`Player ${activeEmbed.platform}`}>
-      <button type="button" className="embedded-player-close" onClick={() => setActiveEmbed(null)} aria-label="Fechar player externo"><FaTimes /></button>
+      <button type="button" className="embedded-player-close" onClick={() => setActiveEmbed(null)} aria-label={t('music.closePlayer')}><FaTimes /></button>
       <iframe title={activeEmbed.title} src={activeEmbed.embedUrl} allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen />
     </aside>}
     <div className="music-dock">
-      {isMenuOpen && <section className="music-menu" aria-label="Menu de música">
-        <div className="music-menu__header"><div><span>Estação Pomocute</span><strong>Escolha sua trilha</strong></div><button type="button" onClick={() => setIsMenuOpen(false)} aria-label="Fechar menu de música"><FaTimes /></button></div>
+      {isMenuOpen && <section className="music-menu" aria-label={t('music.open')}>
+        <div className="music-menu__header"><div><span>{t('music.station')}</span><strong>{t('music.choose')}</strong></div><button type="button" onClick={() => setIsMenuOpen(false)} aria-label={t('music.close')}><FaTimes /></button></div>
         <div className="music-menu__preset-list">
-          {tracks.map((item, index) => <button type="button" key={item.url} className={index === trackIndex ? 'is-selected' : ''} onClick={() => chooseTrack(index)}><FaPlay aria-hidden="true" /><span>{item.name}</span>{index === trackIndex && <small>{state === 'playing' ? 'Tocando' : 'Selecionada'}</small>}</button>)}
+          {tracks.map((item, index) => <button type="button" key={item.url} className={index === trackIndex ? 'is-selected' : ''} onClick={() => chooseTrack(index)}><FaPlay aria-hidden="true" /><span>{item.name}</span>{index === trackIndex && <small>{state === 'playing' ? t('music.playing') : t('music.selected')}</small>}</button>)}
         </div>
         <div className="music-menu__links">
-          <span>Seus links</span>
-          {customLinks.length === 0 && <p>Adicione um link do YouTube ou Spotify.</p>}
+          <span>{t('music.links')}</span>
+          {customLinks.length === 0 && <p>{t('music.empty')}</p>}
           {customLinks.map(link => <div key={link.id} className="music-menu__link"><button type="button" title={link.title} onClick={() => { setActiveEmbed(link); setIsMenuOpen(false); }}>{link.platform === 'youtube' ? <FaYoutube aria-hidden="true" /> : <FaSpotify aria-hidden="true" />}<span>{link.title}</span></button><button type="button" onClick={() => removeLink(link.id)} aria-label={`Remover ${link.title}`}><FaTrash /></button></div>)}
         </div>
-        <form className="music-menu__add-link" onSubmit={addLink}><label className="sr-only" htmlFor="music-link">Link do YouTube ou Spotify</label><input id="music-link" value={linkInput} onChange={event => { setLinkInput(event.target.value); setLinkError(''); }} placeholder="Cole um link do YouTube ou Spotify" /><button type="submit" aria-label="Adicionar link"><FaPlus /></button></form>
+        <form className="music-menu__add-link" onSubmit={addLink}><label className="sr-only" htmlFor="music-link">{t('music.linkLabel')}</label><input id="music-link" value={linkInput} onChange={event => { setLinkInput(event.target.value); setLinkError(''); }} placeholder={t('music.linkPlaceholder')} /><button type="submit" aria-label={t('music.add')}><FaPlus /></button></form>
         {linkError && <p className="music-menu__error" role="alert">{linkError}</p>}
-        {state === 'error' && <span className="sr-only">Música indisponível. Tente novamente ou escolha outra trilha.</span>}
-        <div className="music-menu__controls" aria-label="Controles de música"><button type="button" onClick={() => changeTrack(-1)} aria-label="Faixa anterior"><FaStepBackward /></button><button type="button" className="music-menu__play" onClick={toggle} disabled={state === 'loading'} aria-label={state === 'playing' ? 'Pausar música' : 'Tocar música'}>{state === 'playing' ? <FaPause /> : <FaPlay />}</button><button type="button" onClick={() => changeTrack(1)} aria-label="Próxima faixa"><FaStepForward /></button><label className="music-menu__volume" htmlFor="music-volume"><FaVolumeUp aria-hidden="true" /><span className="sr-only">Volume da música:</span><input id="music-volume" type="range" min="0" max="100" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} /></label></div>
+        {state === 'error' && <span className="sr-only">{t('music.unavailable')}</span>}
+        <div className="music-menu__controls" aria-label={t('music.open')}><button type="button" onClick={() => changeTrack(-1)} aria-label={t('music.previous')}><FaStepBackward /></button><button type="button" className="music-menu__play" onClick={toggle} disabled={state === 'loading'} aria-label={state === 'playing' ? t('music.pause') : t('music.play')}>{state === 'playing' ? <FaPause /> : <FaPlay />}</button><button type="button" onClick={() => changeTrack(1)} aria-label={t('music.next')}><FaStepForward /></button><label className="music-menu__volume" htmlFor="music-volume"><FaVolumeUp aria-hidden="true" /><span className="sr-only">{t('music.volume')}</span><input id="music-volume" type="range" min="0" max="100" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} /></label></div>
       </section>}
-      <button type="button" className="music-dock__trigger" onClick={() => { playClick(); setIsMenuOpen(open => !open); }} aria-label="Abrir menu de música" aria-expanded={isMenuOpen} title="Música"><FaMusic aria-hidden="true" /></button>
+      <button type="button" className="music-dock__trigger" onClick={() => { playClick(); setIsMenuOpen(open => !open); }} aria-label={t('music.open')} aria-expanded={isMenuOpen} title={t('music.open')}><FaMusic aria-hidden="true" /></button>
     </div>
   </>;
 }

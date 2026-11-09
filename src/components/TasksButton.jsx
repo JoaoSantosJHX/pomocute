@@ -4,6 +4,7 @@ import { FaTimes } from 'react-icons/fa';
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
 import { createTask, listTasks, updateTask } from '../services/data';
+import { useI18n } from '../i18n';
 
 const storageKey = 'pomocute-tasks-v1';
 
@@ -17,6 +18,7 @@ function loadTasks() {
 }
 
 export default function TasksButton() {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [tasks, setTasks] = useState(loadTasks);
@@ -77,11 +79,11 @@ export default function TasksButton() {
   };
 
   return <div className="tasks-dock">
-    {isOpen && <section className="tasks-menu" aria-label="Tarefas">
-      <header><div><span>Foco do dia</span><strong>Tarefas</strong></div><button type="button" aria-label="Fechar tarefas" onClick={() => setIsOpen(false)}><FaTimes /></button></header>
-      <form onSubmit={addTask}><label className="sr-only" htmlFor="task-title">Nova tarefa</label><input id="task-title" value={title} onChange={event => setTitle(event.target.value)} placeholder="Adicionar tarefa" /><button type="submit" aria-label="Adicionar tarefa"><FaPlus /></button></form>
+    {isOpen && <section className="tasks-menu" aria-label={t('tasks.title')}>
+      <header><div><span>{t('tasks.eyebrow')}</span><strong>{t('tasks.title')}</strong></div><button type="button" aria-label={t('tasks.close')} onClick={() => setIsOpen(false)}><FaTimes /></button></header>
+      <form onSubmit={addTask}><label className="sr-only" htmlFor="task-title">{t('tasks.new')}</label><input id="task-title" value={title} onChange={event => setTitle(event.target.value)} placeholder={t('tasks.placeholder')} /><button type="submit" aria-label={t('tasks.add')}><FaPlus /></button></form>
       {tasks.length > 0 && <ul>{tasks.map(task => <li key={task.id}><button type="button" className={task.done ? 'is-done' : ''} onClick={() => toggleTask(task)}><FaCheck aria-hidden="true" /><span>{task.title}</span></button></li>)}</ul>}
     </section>}
-    <button type="button" className="tasks-dock__trigger" onClick={() => { playClick(); setIsOpen(open => !open); }} aria-label="Abrir tarefas" aria-expanded={isOpen} title="Tarefas"><FaListCheck aria-hidden="true" /></button>
+    <button type="button" className="tasks-dock__trigger" onClick={() => { playClick(); setIsOpen(open => !open); }} aria-label={t('tasks.open')} aria-expanded={isOpen} title={t('tasks.title')}><FaListCheck aria-hidden="true" /></button>
   </div>;
 }

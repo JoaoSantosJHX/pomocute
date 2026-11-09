@@ -762,8 +762,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .account-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: rgba(73,44,69,.6); font-size: .75rem; font-weight: 700; }
 .account-divider::before,.account-divider::after { flex: 1; height: 1px; background: rgba(103,55,100,.2); content: ''; }
 .account-popover form { display: grid; gap: 11px; }
-.account-popover label { display: grid; gap: 5px; color: rgba(73,44,69,.84); font-size: .77rem; font-weight: 750; }
-.account-popover input { min-height: 40px; box-sizing: border-box; padding: 0 11px; border: 1px solid rgba(176,92,151,.34); border-radius: 11px; color: #482f46; background: rgba(255,255,255,.63); font: inherit; outline-color: #ba4b91; }
+.account-popover form label { display: grid; gap: 5px; color: rgba(73,44,69,.84); font-size: .77rem; font-weight: 750; }
+.account-popover form input { min-height: 40px; box-sizing: border-box; padding: 0 11px; border: 1px solid rgba(176,92,151,.34); border-radius: 11px; color: #482f46; background: rgba(255,255,255,.63); font: inherit; outline-color: #ba4b91; }
 .account-submit { margin-top: 4px; color: #fff; background: linear-gradient(135deg, #c22d83, #a550d0); box-shadow: 0 9px 18px rgba(139,44,118,.24); }
 .account-submit:disabled { opacity: .65; cursor: wait; }
 .account-switch { display: block; margin: 14px auto 0; padding: 0; border: 0; color: #95406f; background: none; font: inherit; font-size: .8rem; font-weight: 750; text-decoration: underline; cursor: pointer; }
@@ -774,4 +774,40 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .account-summary strong,.account-summary span { display: block; }
 .account-summary span { margin-top: 3px; color: rgba(73,44,69,.68); font-size: .78rem; }
 .account-signout { color: #8b2c68; background: rgba(255,255,255,.66); }
+.account-popover--settings { width: min(480px, calc(100vw - 28px)); max-height: calc(100dvh - 92px); overflow-y: auto; }
+.settings-section { margin-top: 17px; padding-top: 16px; border-top: 1px solid rgba(103,55,100,.18); }
+.settings-section h3 { margin: 0; font-size: .9rem; }
+.settings-language { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.settings-language label { color: rgba(73,44,69,.83); font-size: .86rem; font-weight: 780; }
+.settings-language select { min-width: 142px; padding: 9px 30px 9px 11px; border: 1px solid rgba(176,92,151,.3); border-radius: 11px; color: #492c45; background: rgba(255,255,255,.66); font: inherit; font-size: .82rem; font-weight: 700; outline-color: #ba4b91; cursor: pointer; }
+.settings-durations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
+.settings-duration { min-width: 0; }
+.settings-duration > span { display: block; margin: 0 0 6px; color: rgba(73,44,69,.76); font-size: .72rem; font-weight: 720; text-align: center; }
+.settings-duration > div { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; min-height: 46px; border-radius: 13px; background: rgba(255,255,255,.43); }
+.settings-duration button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 9px; color: #843366; background: transparent; cursor: pointer; }
+.settings-duration button:hover:not(:disabled), .settings-duration button:focus-visible { background: rgba(255,255,255,.74); }
+.settings-duration button:disabled { color: rgba(73,44,69,.28); cursor: not-allowed; }
+.settings-duration strong { display: grid; place-items: center; color: #4b2e2e; font-size: 1rem; line-height: 1; text-align: center; }
+.settings-duration small { display: block; margin-top: 2px; color: rgba(73,44,69,.58); font-size: .58rem; font-weight: 700; }
+.settings-note { margin: 11px 0 0; color: rgba(73,44,69,.72); font-size: .75rem; line-height: 1.35; }
+.settings-section__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-toggle { position: relative; display: inline-block; width: 42px; height: 24px; flex: 0 0 auto; cursor: pointer; }
+.settings-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.settings-toggle span { position: absolute; inset: 0; border-radius: 999px; background: rgba(73,44,69,.24); box-shadow: inset 0 1px 2px rgba(44,17,42,.16); transition: background .18s ease; }
+.settings-toggle span::after { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(49,23,48,.25); content: ''; transition: transform .18s ease; }
+.settings-toggle input:checked + span { background: linear-gradient(135deg, #c22d83, #a550d0); }
+.settings-toggle input:checked + span::after { transform: translateX(18px); }
+.settings-toggle input:focus-visible + span { outline: 2px solid #914987; outline-offset: 2px; }
+.settings-alarm-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.settings-alarm-types button { min-height: 38px; padding: 7px 5px; border: 1px solid transparent; border-radius: 11px; color: rgba(73,44,69,.78); background: rgba(255,255,255,.43); font: inherit; font-size: .76rem; font-weight: 720; cursor: pointer; }
+.settings-alarm-types button.is-selected { border-color: rgba(174,69,140,.55); color: #8d2e68; background: rgba(255,246,252,.84); box-shadow: inset 0 1px rgba(255,255,255,.9); }
+.settings-alarm-types button:disabled { opacity: .45; cursor: not-allowed; }
+.settings-volume { display: grid; grid-template-columns: auto auto minmax(0, 1fr) 38px; align-items: center; gap: 7px; margin-top: 14px; color: rgba(73,44,69,.82); font-size: .77rem; font-weight: 720; }
+.settings-volume svg { color: #97356f; }
+.settings-volume input { width: 100%; min-width: 0; accent-color: #bb3b85; }
+.settings-volume input:disabled { opacity: .45; }
+.settings-volume output { color: rgba(73,44,69,.63); font-size: .7rem; text-align: right; }
+.settings-test-alarm { display: block; width: 100%; min-height: 38px; margin-top: 13px; border: 1px solid rgba(176,92,151,.3); border-radius: 11px; color: #8d2e68; background: rgba(255,255,255,.59); font: inherit; font-size: .79rem; font-weight: 750; cursor: pointer; }
+.settings-test-alarm:hover:not(:disabled), .settings-test-alarm:focus-visible { background: rgba(255,255,255,.85); }
+.settings-test-alarm:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 560px) { .account-controls { top: 14px; right: 16px; gap: 7px; } .account-icon-button { width: 38px; height: 38px; border-radius: 12px; } .account-popover { top: 47px; padding: 20px; } }

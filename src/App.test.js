@@ -3,6 +3,11 @@ import App from './App';
 beforeEach(() => {
   delete window.documentPictureInPicture;
   localStorage.clear();
+  localStorage.setItem('pomocute-preferences-v1', JSON.stringify({
+    language: 'pt-BR',
+    durations: { pomodoro: 25, short: 5, long: 15 },
+    alarm: { enabled: true, type: 'chime', volume: 65 },
+  }));
   jest.useFakeTimers();
   jest.setSystemTime(new Date('2026-10-19T12:00:00Z'));
   jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
@@ -232,4 +237,44 @@ test('mantém um mini-timer dentro da página quando PiP não está disponível'
   fireEvent.click(within(fallback).getByRole('button', { name: 'Encerrar sessão' }));
   expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
   openWindow.mockRestore();
+});
+
+test('usa inglês por padrão e permite alterar o idioma nas configurações', () => {
+  localStorage.clear();
+  render(<App />);
+  expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+  click('Settings');
+  fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'pt-BR' } });
+  expect(screen.getByRole('button', { name: 'Começar' })).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('pomocute-preferences-v1')).language).toBe('pt-BR');
+});
+
+test('atualiza a duração parada e bloqueia a edição durante a sessão', () => {
+  render(<App />);
+  click('Configurações');
+  click('Aumentar Foco');
+  expect(screen.getByRole('timer')).toHaveTextContent('26:00');
+  click('Fechar');
+  click('Começar');
+  click('Configurações');
+  expect(screen.getByRole('button', { name: 'Aumentar Foco' })).toBeDisabled();
+  expect(screen.getByText(/durações ficam bloqueadas/i)).toBeInTheDocument();
+});
+
+test('abre a conta autenticada com a opção de sair', () => {
+  localStorage.setItem('pomocute-auth-v1', JSON.stringify({
+    access_token: 'test-token',
+    user: {
+      id: 'test-user',
+      email: 'pessoa@example.com',
+      user_metadata: { full_name: 'Pessoa de Teste' },
+    },
+  }));
+  render(<App />);
+  click('Perfil de Pessoa de Teste');
+  expect(screen.getByText('Conta e dados')).toBeInTheDocument();
+  expect(screen.getByText('pessoa@example.com')).toBeInTheDocument();
+  click('Sair da conta');
+  expect(localStorage.getItem('pomocute-auth-v1')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Entrar ou criar conta' })).toBeInTheDocument();
 });

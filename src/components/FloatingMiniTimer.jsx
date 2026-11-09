@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaPause, FaPlay, FaStop } from 'react-icons/fa';
 import { LuPictureInPicture2 } from 'react-icons/lu';
+import { useI18n } from '../i18n';
 import './FloatingMiniTimer.css';
-
-const modeLabels = { pomodoro: 'Foco', short: 'Pausa curta', long: 'Pausa longa' };
 
 function formatTime(milliseconds) {
   const seconds = Math.ceil(Math.max(0, milliseconds) / 1000);
@@ -12,6 +11,7 @@ function formatTime(milliseconds) {
 }
 
 function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd, onClose, isFallback = false }) {
+  const { t } = useI18n();
   const progress = Math.min(1, Math.max(0, 1 - remainingMs / durationMs));
   const circumference = 2 * Math.PI * 25;
   const dashOffset = circumference * (1 - progress);
@@ -19,12 +19,12 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
   const canEnd = isRunning || status === 'paused';
 
   return (
-    <section className="mini-timer-panel" aria-label="Mini-timer do Pomocute">
+    <section className="mini-timer-panel" aria-label="Pomocute mini timer">
       {isFallback && (
         <button
           type="button"
           className="mini-timer-close"
-          aria-label="Fechar mini-timer"
+          aria-label={t('mini.close')}
           onClick={onClose}
         >
           ×
@@ -36,7 +36,7 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
           <div
             className="mini-timer-progress-ring"
             role="progressbar"
-            aria-label="Progresso da sessão"
+            aria-label={t('mini.progress')}
             aria-valuemin="0"
             aria-valuemax="100"
             aria-valuenow={Math.round(progress * 100)}
@@ -56,7 +56,7 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
           <button
             type="button"
             className="mini-timer-toggle"
-            aria-label={isRunning ? 'Pausar timer' : 'Retomar timer'}
+            aria-label={isRunning ? t('mini.pause') : t('mini.resume')}
             onClick={onToggle}
             disabled={status === 'completed' || status === 'ended'}
           >
@@ -65,14 +65,14 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
         </div>
 
         <div className="mini-timer-readout">
-          <strong role="timer" aria-label="Tempo restante">{formatTime(remainingMs)}</strong>
-          <span className="mini-timer-mode"><i aria-hidden="true" />{modeLabels[mode]}</span>
+          <strong role="timer" aria-label={t('timer.remaining')}>{formatTime(remainingMs)}</strong>
+          <span className="mini-timer-mode"><i aria-hidden="true" />{mode === 'pomodoro' ? t('settings.focus') : mode === 'short' ? t('mode.short') : t('mode.long')}</span>
         </div>
 
         <button
           type="button"
           className="mini-timer-end"
-          aria-label="Encerrar sessão"
+          aria-label={t('mini.end')}
           onClick={onEnd}
           disabled={!canEnd}
         >
@@ -84,6 +84,7 @@ function MiniTimerPanel({ mode, status, remainingMs, durationMs, onToggle, onEnd
 }
 
 export default function FloatingMiniTimer({ mode, status, remainingMs, durationMs, onToggle, onEnd }) {
+  const { t } = useI18n();
   const [externalWindow, setExternalWindow] = useState(null);
   const [fallbackOpen, setFallbackOpen] = useState(false);
   const [notice, setNotice] = useState('');
@@ -147,7 +148,7 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
 
     if (!openBrowserPopup()) {
       setFallbackOpen(true);
-      setNotice('O navegador bloqueou a janela flutuante. O mini-timer abriu nesta página.');
+      setNotice(t('mini.notice'));
     }
   };
 
@@ -158,7 +159,7 @@ export default function FloatingMiniTimer({ mode, status, remainingMs, durationM
       <button
         type="button"
         className="mini-timer-launch"
-        aria-label="Abrir mini-timer flutuante"
+        aria-label={t('mini.open')}
         data-tooltip="Pop out timer"
         onClick={openMiniTimer}
       >
