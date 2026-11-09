@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FaMusic, FaPause, FaPlay, FaPlus, FaSpotify, FaStepBackward, FaStepForward, FaTimes, FaTrash, FaVolumeUp, FaYoutube } from 'react-icons/fa';
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
-import { createMusicLink, listMusicLinks, removeMusicLink, updateMusicLink } from '../services/data';
+import { createSyncId, createMusicLink, listMusicLinks, removeMusicLink, updateMusicLink } from '../services/data';
 import { useI18n } from '../i18n';
 
 const tracks = [
@@ -10,31 +10,76 @@ const tracks = [
   { name: 'Jazz Vibes', url: 'https://stream.laut.fm/jazz' },
   { name: 'Anime Lofi', url: 'https://stream.laut.fm/animefm' },
 ];
-const linksStorageKey = 'pomocute-music-links-v1';
+const guestStorageKey = 'pomocute-music-links-v1';
 const genericYoutubeTitle = 'Vídeo do YouTube';
 
-function loadLinks() {
+function storageKeyFor(userId) {
+  return userId ? `${guestStorageKey}:${userId}` : guestStorageKey;
+}
+
+function normalizeLink(link) {
+  if (!link || typeof link.url !== 'string' || typeof link.embedUrl !== 'string') return null;
+  const syncId = typeof link.syncId === 'string' && link.syncId ? link.syncId : createSyncId();
+  return {
+    id: typeof link.id === 'string' && link.id ? link.id : `local-${syncId}`,
+    syncId,
+    platform: link.platform === 'spotify' ? 'spotify' : 'youtube',
+    title: typeof link.title === 'string' && link.title.trim() ? link.title.trim().slice(0, 280) : genericYoutubeTitle,
+    url: link.url,
+    embedUrl: link.embedUrl,
+    pending: Boolean(link.pending),
+    deleted: Boolean(link.deleted),
+  };
+}
+
+function linkFromRow(link) {
+  return normalizeLink({
+    id: link.id,
+    syncId: link.client_id,
+    platform: link.platform,
+    title: link.title,
+    url: link.source_url,
+    embedUrl: link.embed_url,
+    pending: false,
+  });
+}
+
+function loadLinks(userId = null) {
   try {
-    const links = JSON.parse(localStorage.getItem(linksStorageKey));
-    return Array.isArray(links) ? links.filter(link => link && link.url && link.embedUrl) : [];
-  } catch (_) { return []; }
+    const links = JSON.parse(localStorage.getItem(storageKeyFor(userId)));
+    return Array.isArray(links) ? links.map(normalizeLink).filter(Boolean) : [];
+  } catch (_) {
+    return [];
+  }
 }
 
 function parseEmbedLink(rawUrl) {
   let url;
   try { url = new URL(rawUrl.trim()); } catch (_) { return null; }
   const host = url.hostname.replace(/^www\./, '').toLowerCase();
+
   if (host === 'youtu.be' || host === 'youtube.com' || host.endsWith('.youtube.com')) {
     const videoId = host === 'youtu.be'
       ? url.pathname.split('/').filter(Boolean)[0]
       : url.searchParams.get('v') || url.pathname.match(/\/(embed|shorts|live)\/([^/?]+)/)?.[2];
-    if (!videoId) return null;
-    return { id: `youtube-${videoId}`, platform: 'youtube', title: genericYoutubeTitle, url: url.toString(), embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0` };
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId || '')) return null;
+    return {
+      platform: 'youtube',
+      title: genericYoutubeTitle,
+      url: url.toString(),
+      embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`,
+    };
   }
+
   if (host === 'open.spotify.com') {
     const [kind, id] = url.pathname.split('/').filter(Boolean);
-    if (!['track', 'album', 'playlist', 'episode', 'show'].includes(kind) || !id) return null;
-    return { id: `spotify-${kind}-${id}`, platform: 'spotify', title: `Spotify: ${kind === 'track' ? 'faixa' : kind === 'playlist' ? 'playlist' : kind}`, url: url.toString(), embedUrl: `https://open.spotify.com/embed/${kind}/${id}` };
+    if (!['track', 'album', 'playlist', 'episode', 'show'].includes(kind) || !/^[a-zA-Z0-9]+$/.test(id || '')) return null;
+    return {
+      platform: 'spotify',
+      title: `Spotify: ${kind === 'track' ? 'faixa' : kind === 'playlist' ? 'playlist' : kind}`,
+      url: url.toString(),
+      embedUrl: `https://open.spotify.com/embed/${kind}/${id}`,
+    };
   }
   return null;
 }
@@ -58,64 +103,118 @@ async function resolveYoutubeTitle(link) {
 
 export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, onExternalPlayback }) {
   const { t } = useI18n();
+  const initialUser = getStoredUser();
   const [trackIndex, setTrackIndex] = useState(0);
   const [state, setState] = useState('paused');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [linkError, setLinkError] = useState('');
-  const [customLinks, setCustomLinks] = useState(loadLinks);
+  const [user, setUser] = useState(initialUser);
+  const [customLinks, setCustomLinks] = useState(() => loadLinks(initialUser?.id));
   const [activeEmbed, setActiveEmbed] = useState(null);
-  const [user, setUser] = useState(getStoredUser);
   const audioRef = useRef(null);
   const request = useRef(0);
   const shouldResume = useRef(false);
   const track = tracks[trackIndex];
+  const visibleLinks = customLinks.filter(link => !link.deleted);
 
   useEffect(() => () => {
     request.current += 1;
     onEnergyChange?.(0);
   }, [onEnergyChange]);
-  useEffect(() => { try { localStorage.setItem(linksStorageKey, JSON.stringify(customLinks)); } catch (_) {} }, [customLinks]);
+
+  useEffect(() => {
+    try { localStorage.setItem(storageKeyFor(user?.id), JSON.stringify(customLinks)); } catch (_) {}
+  }, [customLinks, user?.id]);
+
   useEffect(() => {
     let active = true;
     const hydrateLocalTitles = async () => {
-      const localLinks = loadLinks();
+      const localLinks = loadLinks(initialUser?.id);
       const hydratedLinks = await Promise.all(localLinks.map(resolveYoutubeTitle));
       if (active && hydratedLinks.some((link, index) => link.title !== localLinks[index].title)) setCustomLinks(hydratedLinks);
     };
     hydrateLocalTitles();
     return () => { active = false; };
-  }, []);
+  }, [initialUser?.id]);
+
   useEffect(() => {
-    const syncUser = event => setUser(event.detail?.user || getStoredUser());
+    const syncUser = event => {
+      const nextUser = event.detail?.user || getStoredUser();
+      if (nextUser?.id) {
+        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
+        setCustomLinks(loadLinks(nextUser.id));
+      } else {
+        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
+        setCustomLinks([]);
+      }
+      setActiveEmbed(null);
+      setUser(nextUser);
+    };
     window.addEventListener('pomocute:auth-change', syncUser);
     return () => window.removeEventListener('pomocute:auth-change', syncUser);
   }, []);
+
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) return undefined;
     let active = true;
+
     const syncLinks = async () => {
       try {
         const remoteRows = await listMusicLinks();
         if (!active || !remoteRows) return;
-        const remoteLinks = remoteRows.map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }));
-        const hydratedRemoteLinks = await Promise.all(remoteLinks.map(resolveYoutubeTitle));
-        hydratedRemoteLinks.forEach((link, index) => {
+
+        const remoteLinks = remoteRows.map(linkFromRow).filter(Boolean);
+        const remoteBySyncId = new Map(remoteLinks.map(link => [link.syncId, link]));
+        const localLinks = loadLinks(user.id);
+
+        const deletions = localLinks.filter(link => link.deleted);
+        const deletionResults = await Promise.all(deletions.map(async link => {
+          const remote = remoteBySyncId.get(link.syncId);
+          if (!remote) return { ...link, deleted: true, pending: false, remove: true };
+          try {
+            await removeMusicLink(remote.id);
+            return { ...link, deleted: true, pending: false, remove: true };
+          } catch (_) {
+            return { ...link, deleted: true, pending: true, remove: false };
+          }
+        }));
+
+        const pendingOrMissing = localLinks.filter(link => !link.deleted && (link.pending || !remoteBySyncId.has(link.syncId)));
+        const resolved = await Promise.all(pendingOrMissing.map(async localLink => {
+          const titledLink = await resolveYoutubeTitle(localLink);
+          try {
+            const saved = await createMusicLink(titledLink);
+            return saved ? linkFromRow(saved) : { ...titledLink, pending: true };
+          } catch (_) {
+            return { ...titledLink, pending: true };
+          }
+        }));
+
+        const titledRemoteLinks = await Promise.all(remoteLinks.map(resolveYoutubeTitle));
+        titledRemoteLinks.forEach((link, index) => {
           if (link.title !== remoteLinks[index].title) updateMusicLink(link.id, link.title).catch(() => {});
         });
-        const remoteUrls = new Set(remoteLinks.map(link => link.url));
-        const localOnly = loadLinks().filter(link => !remoteUrls.has(link.url));
-        const hydratedLocalOnly = await Promise.all(localOnly.map(resolveYoutubeTitle));
-        const created = await Promise.all(hydratedLocalOnly.map(createMusicLink));
-        if (active) setCustomLinks([...hydratedRemoteLinks, ...created.filter(Boolean).map(link => ({ id: link.id, platform: link.platform, title: link.title, url: link.source_url, embedUrl: link.embed_url }))]);
+
+        if (!active) return;
+        const merged = new Map(titledRemoteLinks.map(link => [link.syncId, link]));
+        deletionResults.forEach(link => {
+          if (link.remove) merged.delete(link.syncId);
+          else merged.set(link.syncId, link);
+        });
+        resolved.forEach(link => merged.set(link.syncId, link));
+        setCustomLinks([...merged.values()]);
       } catch (_) {
-        // Mantém os links do navegador caso a sincronização não esteja disponível.
+        // O cache separado da própria conta permanece disponível sem rede.
       }
     };
+
     syncLinks();
     return () => { active = false; };
   }, [user?.id]);
+
   useEffect(() => { onExternalPlayback?.(Boolean(activeEmbed)); }, [activeEmbed, onExternalPlayback]);
+
   useEffect(() => {
     if (!shouldResume.current) return;
     shouldResume.current = false;
@@ -133,6 +232,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     setState('loading');
     try { await audio.play(); if (request.current === id) setState('playing'); } catch (_) { if (request.current === id) setState('error'); }
   };
+
   const changeTrack = direction => {
     playClick();
     const wasPlaying = state === 'playing';
@@ -142,6 +242,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     setState(wasPlaying ? 'loading' : 'paused');
     setTrackIndex(current => (current + direction + tracks.length) % tracks.length);
   };
+
   const chooseTrack = index => {
     if (index !== trackIndex) {
       const wasPlaying = state === 'playing';
@@ -153,38 +254,61 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     }
     setIsMenuOpen(false);
   };
+
   const addLink = event => {
     event.preventDefault();
-    const link = parseEmbedLink(linkInput);
-    if (!link) { setLinkError(t('music.invalid')); return; }
-    const existing = customLinks.find(item => item.url === link.url);
-    const localLink = { ...link, id: `local-${link.id}-${Date.now()}` };
+    const parsedLink = parseEmbedLink(linkInput);
+    if (!parsedLink) { setLinkError(t('music.invalid')); return; }
+
+    const existing = visibleLinks.find(link => link.url === parsedLink.url);
+    const syncId = createSyncId();
+    const localLink = {
+      ...parsedLink,
+      id: `local-${syncId}`,
+      syncId,
+      pending: Boolean(user?.id),
+      deleted: false,
+    };
+
     if (!existing) {
       setCustomLinks(previous => [...previous, localLink]);
       const enrichAndSave = async () => {
         const titledLink = await resolveYoutubeTitle(localLink);
         if (titledLink.title !== localLink.title) {
-          setCustomLinks(previous => previous.map(item => item.id === localLink.id ? titledLink : item));
-          setActiveEmbed(previous => previous?.id === localLink.id ? titledLink : previous);
+          setCustomLinks(previous => previous.map(link => link.syncId === localLink.syncId ? titledLink : link));
+          setActiveEmbed(previous => previous?.syncId === localLink.syncId ? titledLink : previous);
         }
         if (!user?.id) return;
         try {
           const saved = await createMusicLink(titledLink);
-          if (saved) setCustomLinks(previous => previous.map(item => item.id === localLink.id ? { id: saved.id, platform: saved.platform, title: saved.title, url: saved.source_url, embedUrl: saved.embed_url } : item));
+          if (saved) {
+            const syncedLink = linkFromRow(saved);
+            setCustomLinks(previous => previous.map(link => link.syncId === localLink.syncId ? syncedLink : link));
+            setActiveEmbed(previous => previous?.syncId === localLink.syncId ? syncedLink : previous);
+          }
         } catch (_) {}
       };
       enrichAndSave();
     }
+
     setLinkInput('');
     setLinkError('');
     setActiveEmbed(existing || localLink);
     setIsMenuOpen(false);
   };
-  const removeLink = id => {
-    const link = customLinks.find(item => item.id === id);
-    setCustomLinks(previous => previous.filter(link => link.id !== id));
-    setActiveEmbed(previous => previous?.id === id ? null : previous);
-    if (user?.id && link && !id.startsWith('local-')) removeMusicLink(id).catch(() => {});
+
+  const removeLink = link => {
+    setActiveEmbed(previous => previous?.syncId === link.syncId ? null : previous);
+    if (!user?.id || link.id.startsWith('local-')) {
+      setCustomLinks(previous => previous.filter(item => item.syncId !== link.syncId));
+      return;
+    }
+
+    const pendingDeletion = { ...link, deleted: true, pending: true };
+    setCustomLinks(previous => previous.map(item => item.syncId === link.syncId ? pendingDeletion : item));
+    removeMusicLink(link.id).then(() => {
+      setCustomLinks(previous => previous.filter(item => item.syncId !== link.syncId));
+    }).catch(() => {});
   };
 
   return <>
@@ -192,7 +316,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
     <Volume audioRef={audioRef} volume={volume} />
     {activeEmbed && <aside className="embedded-player-window" aria-label={`Player ${activeEmbed.platform}`}>
       <button type="button" className="embedded-player-close" onClick={() => setActiveEmbed(null)} aria-label={t('music.closePlayer')}><FaTimes /></button>
-      <iframe title={activeEmbed.title} src={activeEmbed.embedUrl} allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen />
+      <iframe title={activeEmbed.title} src={activeEmbed.embedUrl} referrerPolicy="strict-origin-when-cross-origin" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen />
     </aside>}
     <div className="music-dock">
       {isMenuOpen && <section className="music-menu" aria-label={t('music.open')}>
@@ -202,10 +326,10 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
         </div>
         <div className="music-menu__links">
           <span>{t('music.links')}</span>
-          {customLinks.length === 0 && <p>{t('music.empty')}</p>}
-          {customLinks.map(link => <div key={link.id} className="music-menu__link"><button type="button" title={link.title} onClick={() => { setActiveEmbed(link); setIsMenuOpen(false); }}>{link.platform === 'youtube' ? <FaYoutube aria-hidden="true" /> : <FaSpotify aria-hidden="true" />}<span>{link.title}</span></button><button type="button" onClick={() => removeLink(link.id)} aria-label={`Remover ${link.title}`}><FaTrash /></button></div>)}
+          {visibleLinks.length === 0 && <p>{t('music.empty')}</p>}
+          {visibleLinks.map(link => <div key={link.syncId} className="music-menu__link"><button type="button" title={link.title} onClick={() => { setActiveEmbed(link); setIsMenuOpen(false); }}>{link.platform === 'youtube' ? <FaYoutube aria-hidden="true" /> : <FaSpotify aria-hidden="true" />}<span>{link.title}</span></button><button type="button" onClick={() => removeLink(link)} aria-label={`Remover ${link.title}`}><FaTrash /></button></div>)}
         </div>
-        <form className="music-menu__add-link" onSubmit={addLink}><label className="sr-only" htmlFor="music-link">{t('music.linkLabel')}</label><input id="music-link" value={linkInput} onChange={event => { setLinkInput(event.target.value); setLinkError(''); }} placeholder={t('music.linkPlaceholder')} /><button type="submit" aria-label={t('music.add')}><FaPlus /></button></form>
+        <form className="music-menu__add-link" onSubmit={addLink}><label className="sr-only" htmlFor="music-link">{t('music.linkLabel')}</label><input id="music-link" maxLength="2048" value={linkInput} onChange={event => { setLinkInput(event.target.value); setLinkError(''); }} placeholder={t('music.linkPlaceholder')} /><button type="submit" aria-label={t('music.add')}><FaPlus /></button></form>
         {linkError && <p className="music-menu__error" role="alert">{linkError}</p>}
         {state === 'error' && <span className="sr-only">{t('music.unavailable')}</span>}
         <div className="music-menu__controls" aria-label={t('music.open')}><button type="button" onClick={() => changeTrack(-1)} aria-label={t('music.previous')}><FaStepBackward /></button><button type="button" className="music-menu__play" onClick={toggle} disabled={state === 'loading'} aria-label={state === 'playing' ? t('music.pause') : t('music.play')}>{state === 'playing' ? <FaPause /> : <FaPlay />}</button><button type="button" onClick={() => changeTrack(1)} aria-label={t('music.next')}><FaStepForward /></button><label className="music-menu__volume" htmlFor="music-volume"><FaVolumeUp aria-hidden="true" /><span className="sr-only">{t('music.volume')}</span><input id="music-volume" type="range" min="0" max="100" value={volume} onChange={event => onVolumeChange(Number(event.target.value))} /></label></div>
