@@ -168,7 +168,7 @@ test('mantém modos fora da esfera e apenas o controle principal no timer', () =
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument();
 });
 
-test('habilita as pausas quando o foco é pausado', () => {
+test('permite trocar para uma pausa quando o foco está pausado', () => {
   render(<App />);
   click('Começar');
   click('Pausar');
