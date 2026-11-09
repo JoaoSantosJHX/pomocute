@@ -84,11 +84,15 @@ export default function TasksButton() {
 
         const remoteTasks = remoteRows.map(taskFromRow).filter(Boolean);
         const remoteBySyncId = new Map(remoteTasks.map(task => [task.syncId, task]));
+        const remoteById = new Map(remoteTasks.map(task => [task.id, task]));
         const localTasks = loadTasks(user.id);
-        const pendingOrMissing = localTasks.filter(task => task.pending || !remoteBySyncId.has(task.syncId));
+        const pendingOrMissing = localTasks.filter(task => {
+          const remote = remoteBySyncId.get(task.syncId) || remoteById.get(task.id);
+          return task.pending || !remote;
+        });
 
         const resolved = await Promise.all(pendingOrMissing.map(async task => {
-          const remote = remoteBySyncId.get(task.syncId);
+          const remote = remoteBySyncId.get(task.syncId) || remoteById.get(task.id);
           try {
             const saved = remote
               ? await updateTask({ ...task, id: remote.id })
