@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FaCog, FaGoogle, FaMinus, FaPlus, FaSignOutAlt, FaTimes, FaUserCircle, FaVolumeUp } from 'react-icons/fa';
 import { authConfigured, captureOAuthSession, getStoredUser, loadCurrentUser, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword } from '../services/auth';
 import { languageOptions, useI18n } from '../i18n';
@@ -38,6 +38,7 @@ export default function AccountControls({
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     captureOAuthSession();
@@ -45,6 +46,47 @@ export default function AccountControls({
       // Mantém a sessão local visível se a rede estiver temporariamente indisponível.
     });
   }, []);
+
+  useEffect(() => {
+    if (!panel) return undefined;
+    const previousFocus = document.activeElement;
+    const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const focusDialog = () => {
+      const focusable = dialogRef.current?.querySelectorAll(focusableSelector);
+      focusable?.[0]?.focus();
+    };
+    const timer = window.setTimeout(focusDialog, 0);
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setPanel(null);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = [...(dialogRef.current?.querySelectorAll(focusableSelector) || [])];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previousFocus instanceof HTMLElement) previousFocus.focus();
+    };
+  }, [panel]);
 
   const openAuth = () => {
     if (panel === 'auth') { setPanel(null); return; }
@@ -65,12 +107,19 @@ export default function AccountControls({
     if (form.password.length < 8) { setMessage(t('account.passwordHint')); return; }
     setIsSubmitting(true);
     try {
-      const nextUser = isRegistering
+      const result = isRegistering
         ? await signUpWithPassword(form.email, form.password, form.name.trim())
         : await signInWithPassword(form.email, form.password);
-      setUser(nextUser || null);
+      const nextUser = result?.user || null;
+
+      if (isRegistering && !result?.session) {
+        setUser(null);
+        setMessage(t('account.confirmEmail'));
+        return;
+      }
+
+      setUser(nextUser);
       if (nextUser) setPanel(null);
-      else setMessage(t('account.confirmEmail'));
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -80,8 +129,8 @@ export default function AccountControls({
   const google = () => {
     try { signInWithGoogle(); } catch (error) { setMessage(error.message); }
   };
-  const logout = () => {
-    signOut();
+  const logout = async () => {
+    await signOut();
     setUser(null);
     setPanel(null);
   };
@@ -96,7 +145,7 @@ export default function AccountControls({
     </button>
     <button type="button" className="account-icon-button" onClick={toggleSettings} aria-label={t('account.settings')} aria-expanded={panel === 'settings'} title={t('account.settings')}><FaCog aria-hidden="true" /></button>
 
-    {panel && <div className={`account-popover${panel === 'settings' ? ' account-popover--settings' : ''}`} role="dialog" aria-modal="true" aria-label={panelLabel}>
+    {panel && <div ref={dialogRef} className={`account-popover${panel === 'settings' ? ' account-popover--settings' : ''}`} role="dialog" aria-modal="true" aria-label={panelLabel}>
       <button type="button" className="account-popover__close" onClick={() => setPanel(null)} aria-label={t('account.close')}><FaTimes /></button>
       {panel === 'auth' && <>
         <span className="account-popover__eyebrow">{t('account.space')}</span>
