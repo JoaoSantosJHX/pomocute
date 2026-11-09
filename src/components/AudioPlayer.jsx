@@ -166,11 +166,12 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
 
         const remoteLinks = remoteRows.map(linkFromRow).filter(Boolean);
         const remoteBySyncId = new Map(remoteLinks.map(link => [link.syncId, link]));
+        const remoteById = new Map(remoteLinks.map(link => [link.id, link]));
         const localLinks = loadLinks(user.id);
 
         const deletions = localLinks.filter(link => link.deleted);
         const deletionResults = await Promise.all(deletions.map(async link => {
-          const remote = remoteBySyncId.get(link.syncId);
+          const remote = remoteBySyncId.get(link.syncId) || remoteById.get(link.id);
           if (!remote) return { ...link, deleted: true, pending: false, remove: true };
           try {
             await removeMusicLink(remote.id);
@@ -180,8 +181,14 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
           }
         }));
 
-        const pendingOrMissing = localLinks.filter(link => !link.deleted && (link.pending || !remoteBySyncId.has(link.syncId)));
+        const pendingOrMissing = localLinks.filter(link => {
+          if (link.deleted) return false;
+          const remote = remoteBySyncId.get(link.syncId) || remoteById.get(link.id);
+          return link.pending || !remote;
+        });
         const resolved = await Promise.all(pendingOrMissing.map(async localLink => {
+          const remote = remoteBySyncId.get(localLink.syncId) || remoteById.get(localLink.id);
+          if (remote) return remote;
           const titledLink = await resolveYoutubeTitle(localLink);
           try {
             const saved = await createMusicLink(titledLink);
