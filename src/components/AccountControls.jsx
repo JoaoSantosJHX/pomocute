@@ -47,15 +47,17 @@ export default function AccountControls({
   }, []);
 
   const openAuth = () => {
-    setPanel('auth');
+    if (panel === 'auth') { setPanel(null); return; }
     setIsRegistering(false);
     setMessage('');
     setForm(initialForm);
+    setPanel('auth');
   };
   const openProfile = () => {
-    if (user) setPanel('account');
+    if (user) setPanel(currentPanel => currentPanel === 'account' ? null : 'account');
     else openAuth();
   };
+  const toggleSettings = () => setPanel(currentPanel => currentPanel === 'settings' ? null : 'settings');
   const change = event => setForm(previous => ({ ...previous, [event.target.name]: event.target.value }));
   const submit = async event => {
     event.preventDefault();
@@ -89,10 +91,10 @@ export default function AccountControls({
   const panelLabel = panel === 'auth' ? t('account.signIn') : panel === 'account' ? t('account.data') : t('settings.title');
 
   return <div className="account-controls">
-    <button type="button" className="account-icon-button" onClick={openProfile} aria-label={user ? t('account.profile', { name: displayName }) : t('account.signIn')} title={user ? displayName : t('account.signIn')}>
+    <button type="button" className="account-icon-button" onClick={openProfile} aria-label={user ? t('account.profile', { name: displayName }) : t('account.signIn')} aria-expanded={panel === (user ? 'account' : 'auth')} title={user ? displayName : t('account.signIn')}>
       {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : <FaUserCircle aria-hidden="true" />}
     </button>
-    <button type="button" className="account-icon-button" onClick={() => setPanel('settings')} aria-label={t('account.settings')} title={t('account.settings')}><FaCog aria-hidden="true" /></button>
+    <button type="button" className="account-icon-button" onClick={toggleSettings} aria-label={t('account.settings')} aria-expanded={panel === 'settings'} title={t('account.settings')}><FaCog aria-hidden="true" /></button>
 
     {panel && <div className={`account-popover${panel === 'settings' ? ' account-popover--settings' : ''}`} role="dialog" aria-modal="true" aria-label={panelLabel}>
       <button type="button" className="account-popover__close" onClick={() => setPanel(null)} aria-label={t('account.close')}><FaTimes /></button>

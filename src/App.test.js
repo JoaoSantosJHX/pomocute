@@ -261,6 +261,17 @@ test('atualiza a duração parada e bloqueia a edição durante a sessão', () =
   expect(screen.getByText(/durações ficam bloqueadas/i)).toBeInTheDocument();
 });
 
+test('alterna as configurações pelo mesmo botão', () => {
+  render(<App />);
+  const settingsButton = screen.getByRole('button', { name: 'Configurações' });
+  fireEvent.click(settingsButton);
+  expect(screen.getByRole('dialog', { name: 'Configurações' })).toBeInTheDocument();
+  expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+  fireEvent.click(settingsButton);
+  expect(screen.queryByRole('dialog', { name: 'Configurações' })).not.toBeInTheDocument();
+  expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+});
+
 test('abre a conta autenticada com a opção de sair', () => {
   localStorage.setItem('pomocute-auth-v1', JSON.stringify({
     access_token: 'test-token',
@@ -271,9 +282,15 @@ test('abre a conta autenticada com a opção de sair', () => {
     },
   }));
   render(<App />);
-  click('Perfil de Pessoa de Teste');
+  const profileButton = screen.getByRole('button', { name: 'Perfil de Pessoa de Teste' });
+  fireEvent.click(profileButton);
   expect(screen.getByText('Conta e dados')).toBeInTheDocument();
   expect(screen.getByText('pessoa@example.com')).toBeInTheDocument();
+  expect(profileButton).toHaveAttribute('aria-expanded', 'true');
+  fireEvent.click(profileButton);
+  expect(screen.queryByRole('dialog', { name: 'Conta e dados' })).not.toBeInTheDocument();
+  expect(profileButton).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.click(profileButton);
   click('Sair da conta');
   expect(localStorage.getItem('pomocute-auth-v1')).toBeNull();
   expect(screen.getByRole('button', { name: 'Entrar ou criar conta' })).toBeInTheDocument();
