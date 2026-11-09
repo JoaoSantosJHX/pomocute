@@ -367,7 +367,7 @@ function TimerView({
         key={key}
         className={mode === key ? 'active' : ''}
         aria-pressed={mode === key}
-        disabled={status === 'running'}
+        disabled={isSessionLocked}
         onClick={() => onSelectMode(key)}
       >{labels[key]}</button>)}
     </nav>
