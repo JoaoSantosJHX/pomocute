@@ -64,6 +64,7 @@ export default function TasksButton() {
         setTasks(loadTasks(nextUser.id));
       } else {
         // Após sair, não exibimos os dados da conta anterior nem de outro visitante.
+        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
         setTasks([]);
       }
       setUser(nextUser);
