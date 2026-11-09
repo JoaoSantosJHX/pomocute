@@ -168,17 +168,13 @@ test('mantém modos fora da esfera e apenas o controle principal no timer', () =
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument();
 });
 
-test('habilita as pausas quando o foco é pausado', () => {
+test('bloqueia a troca de modo quando o foco está pausado', () => {
   render(<App />);
   click('Começar');
   click('Pausar');
-  const shortBreak = screen.getByRole('button', { name: 'Pausa curta' });
-  const longBreak = screen.getByRole('button', { name: 'Pausa longa' });
-  expect(shortBreak).not.toBeDisabled();
-  expect(longBreak).not.toBeDisabled();
-  fireEvent.click(shortBreak);
-  expect(screen.getByText('Pronto para começar')).toBeInTheDocument();
-  expect(screen.getByRole('timer')).toHaveTextContent('05:00');
+  expect(screen.getByRole('button', { name: 'Pausa curta' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Pausa longa' })).toBeDisabled();
+  expect(screen.getByRole('timer')).toHaveTextContent('25:00');
 });
 test('dados locais inválidos não impedem iniciar uma sessão', () => {
   localStorage.setItem('pomocute-session-v1', '{invalid');
