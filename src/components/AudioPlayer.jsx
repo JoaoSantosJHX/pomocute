@@ -175,7 +175,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
           if (!remote) return { ...link, deleted: true, pending: false, remove: true };
           try {
             await removeMusicLink(remote.id);
-            return { ...link, deleted: true, pending: false, remove: true };
+            return { ...link, id: remote.id, syncId: remote.syncId, deleted: true, pending: false, remove: true };
           } catch (_) {
             return { ...link, deleted: true, pending: true, remove: false };
           }
