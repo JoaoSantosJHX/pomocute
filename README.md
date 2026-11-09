@@ -1,73 +1,48 @@
-# pomocute
-Pomodoro cute
+# Pomocute
 
-# Getting Started with Create React App
+Um timer Pomodoro leve para sessões de foco, pausas, tarefas e música ambiente.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Desenvolvimento local
 
-## Available Scripts
+```bash
+npm ci
+npm start
+```
 
-In the project directory, you can run:
+A aplicação abre em [http://localhost:3000](http://localhost:3000).
 
-### `npm start`
+## Variáveis de ambiente
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Crie um arquivo `.env.local` para habilitar conta e sincronização:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+REACT_APP_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=sua-chave-anon-publica
+```
 
-### `npm test`
+A chave `anon` pode ser exposta no cliente quando Row Level Security estiver ativo. Nunca use nem publique uma chave `service_role` no navegador.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Banco de dados e segurança
 
-### `npm run build`
+- Para um ambiente novo, execute [`supabase/schema.sql`](./supabase/schema.sql).
+- Para um ambiente existente, aplique [`supabase/migrations/20261109_harden_mvp_sync_and_rls.sql`](./supabase/migrations/20261109_harden_mvp_sync_and_rls.sql) primeiro em ambiente de teste.
+- Em seguida, execute [`supabase/tests/rls_policies_test.sql`](./supabase/tests/rls_policies_test.sql) pelo runner de testes do Supabase. O teste verifica que uma conta não lê, altera ou remove dados de outra.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+A migração preserva os dados atuais e adiciona identificadores de sincronização estáveis a tarefas e links de música. Ela deve estar aplicada antes de publicar um cliente que use essa versão.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Verificação
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+npm test -- --watchAll=false
+npm run build
+```
 
-### `npm run eject`
+O GitHub Actions executa esses dois comandos em pull requests e em mudanças na `main`. O Vercel cria uma prévia para revisão; a produção só deve receber a alteração depois da migração e da validação da prévia.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Estrutura relevante
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `src/components/Timer.jsx`: ciclo do timer e controles de foco.
+- `src/components/FloatingMiniTimer.jsx`: mini timer flutuante.
+- `src/components/TasksButton.jsx` e `src/components/AudioPlayer.jsx`: dados locais e sincronização.
+- `src/services/auth.js` e `src/services/data.js`: autenticação e acesso ao Supabase.
+- `supabase/`: esquema, migrações e testes RLS.
