@@ -1,10 +1,33 @@
 # Roadmap — Pomocute
 
-**Status:** MVP em evolução; Fase 0 concluída localmente, com validação da versão pública pendente  
-**Atualizado em:** 22/10/2026  
+**Status:** ciclo de consolidação do MVP em andamento na branch de correções; produção inalterada  
+**Atualizado em:** 09/11/2026  
 **Princípio de priorização:** confiabilidade do foco e clareza de uso antes de expansão de escopo.
 
 Este roadmap organiza o trabalho por resultados e critérios de saída, sem datas comprometidas. As etapas podem mudar após validar o app publicado e observar o uso. Consulte também [VISAO_PRODUTO.md](./VISAO_PRODUTO.md).
+
+## Ciclo ativo — Consolidação do MVP
+
+**Objetivo:** transformar os fluxos já existentes em uma base segura, consistente e verificável antes de expandir o produto.
+
+**Implementado na branch de consolidação, aguardando validação:**
+
+- Isolamento do cache de tarefas e links de música por conta, sem importar dados de visitante automaticamente no login.
+- Sincronização idempotente por registro, com chave gerada no cliente e reconciliação de tentativas que falharam sem criar duplicatas.
+- Renovação de sessão Supabase e tratamento correto do cadastro que exige confirmação de e-mail.
+- Bloqueio da troca de modo enquanto uma sessão está rodando ou pausada.
+- Foco preso no diálogo de conta/configurações, fechamento por Escape e indicador de foco visível para campos de tarefa e música.
+- Migração versionada para chaves de sincronização, políticas RLS explícitas, permissões mínimas, índices por usuário e teste de isolamento entre contas.
+- Cabeçalhos de segurança no Vercel, metadados básicos da página e pipeline de CI para testes e build.
+
+**Sequência de validação:**
+
+1. Aplicar a migração do Supabase em um ambiente de teste e executar o teste RLS.
+2. Confirmar no CI os testes da interface e o build de produção.
+3. Conferir a prévia da branch em desktop e celular: timer, mini-timer, login, cadastro com confirmação, troca de conta, tarefas, links de música e configurações.
+4. Revisar o pull request e decidir sobre a migração no ambiente de produção. A publicação só ocorre após essa revisão.
+
+**Critério de saída:** os testes automatizados passam; a migração é aplicada e comprovada em ambiente seguro; uma conta não acessa nem mistura os dados de outra; os fluxos críticos funcionam na prévia responsiva; a decisão de publicar fica registrada.
 
 ## Fase 0 — Base confiável (concluída localmente)
 
