@@ -147,15 +147,16 @@ export async function loadCurrentUser() {
 
 export async function signOut() {
   const session = readSession();
+  // Encerrar a sessão local não depende da disponibilidade da rede.
+  saveSession(null);
+  notifyAuthChange(null);
+
   try {
     if (authConfigured && session?.access_token) {
       await request('logout', undefined, { authorization: session.access_token });
     }
   } catch (_) {
-    // A limpeza local não depende da disponibilidade da rede.
-  } finally {
-    saveSession(null);
-    notifyAuthChange(null);
+    // O token local já foi removido.
   }
 }
 
