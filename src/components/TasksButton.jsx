@@ -3,7 +3,7 @@ import { FaCheck, FaListCheck, FaPlus } from 'react-icons/fa6';
 import { FaTimes } from 'react-icons/fa';
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
-import { createTask, listTasks, updateTask } from '../services/data';
+import { createTask, deleteTask, listTasks, updateTask } from '../services/data';
 import { useI18n } from '../i18n';
 
 const storageKey = 'pomocute-tasks-v1';
@@ -77,12 +77,17 @@ export default function TasksButton() {
       if (saved) setTasks(previous => previous.map(item => item.id === task.id ? { id: saved.id, title: saved.title, done: saved.completed } : item));
     }).catch(() => {});
   };
+  const removeTask = task => {
+    playClick();
+    setTasks(previous => previous.filter(item => item.id !== task.id));
+    if (user?.id && !task.id.startsWith('local-')) deleteTask(task.id).catch(() => {});
+  };
 
   return <div className="tasks-dock">
     {isOpen && <section className="tasks-menu" aria-label={t('tasks.title')}>
       <header><div><span>{t('tasks.eyebrow')}</span><strong>{t('tasks.title')}</strong></div><button type="button" aria-label={t('tasks.close')} onClick={() => setIsOpen(false)}><FaTimes /></button></header>
       <form onSubmit={addTask}><label className="sr-only" htmlFor="task-title">{t('tasks.new')}</label><input id="task-title" value={title} onChange={event => setTitle(event.target.value)} placeholder={t('tasks.placeholder')} /><button type="submit" aria-label={t('tasks.add')}><FaPlus /></button></form>
-      {tasks.length > 0 && <ul>{tasks.map(task => <li key={task.id}><button type="button" className={task.done ? 'is-done' : ''} onClick={() => toggleTask(task)}><FaCheck aria-hidden="true" /><span>{task.title}</span></button></li>)}</ul>}
+      {tasks.length > 0 && <ul>{tasks.slice().reverse().map(task => <li key={task.id}><button type="button" className={`tasks-menu__task${task.done ? ' is-done' : ''}`} onClick={() => toggleTask(task)}><FaCheck aria-hidden="true" /><span>{task.title}</span></button><button type="button" className="tasks-menu__delete" onClick={() => removeTask(task)} aria-label={t('tasks.remove', { title: task.title })} title={t('tasks.remove', { title: task.title })}><FaTimes aria-hidden="true" /></button></li>)}</ul>}
     </section>}
     <button type="button" className="tasks-dock__trigger" onClick={() => { playClick(); setIsOpen(open => !open); }} aria-label={t('tasks.open')} aria-expanded={isOpen} title={t('tasks.title')}><FaListCheck aria-hidden="true" /></button>
   </div>;

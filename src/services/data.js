@@ -15,6 +15,9 @@ export async function updateTask(task) {
   const rows = await supabaseDataRequest(`tasks?id=eq.${encode(task.id)}`, { method: 'PATCH', body: { title: task.title, completed: Boolean(task.done), completed_at: task.done ? new Date().toISOString() : null } });
   return rows?.[0] || null;
 }
+export async function deleteTask(id) {
+  return supabaseDataRequest(`tasks?id=eq.${encode(id)}`, { method: 'DELETE' });
+}
 
 export async function listMusicLinks() {
   return supabaseDataRequest('music_links?select=id,platform,title,source_url,embed_url,created_at&order=created_at.asc');
