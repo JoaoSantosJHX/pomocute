@@ -1,6 +1,12 @@
 # pomocute
 Pomodoro cute
 
+## Ambiente de desenvolvimento
+
+**Pasta oficial de trabalho:** `C:\Dev\pomocute`
+
+Todo desenvolvimento, teste, build e servidor local do Pomocute deve ser executado a partir dessa pasta. A cópia anterior em `C:\Users\onlyj\OneDrive\Documentos\Projetos GPT\Pomocute\pomocute` deve ser mantida apenas como contingência e não deve ser usada para desenvolvimento ativo, pois a sincronização do OneDrive pode tornar operações com Git, `node_modules` e builds mais lentas.
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
