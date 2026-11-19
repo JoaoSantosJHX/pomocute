@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaCog, FaGoogle, FaMinus, FaPlus, FaSignOutAlt, FaTimes, FaUserCircle, FaVolumeUp } from 'react-icons/fa';
-import { authConfigured, captureOAuthSession, getStoredUser, loadCurrentUser, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword } from '../services/auth';
+import { authConfigured, captureOAuthSession, getStoredUser, loadCurrentUser, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword, startSessionAutoRefresh } from '../services/auth';
 import { languageOptions, useI18n } from '../i18n';
 
 const initialForm = { name: '', email: '', password: '' };
@@ -40,10 +40,29 @@ export default function AccountControls({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    const updateUser = nextUser => {
+      if (mounted) setUser(nextUser || null);
+    };
+    const handleAuthChange = event => updateUser(event.detail?.user);
+    const handleStorageChange = event => {
+      if (event.key === 'pomocute-auth-v1') updateUser(getStoredUser());
+    };
+
+    window.addEventListener('pomocute:auth-change', handleAuthChange);
+    window.addEventListener('storage', handleStorageChange);
     captureOAuthSession();
-    loadCurrentUser().then(setUser).catch(() => {
+    const stopAutoRefresh = startSessionAutoRefresh();
+    loadCurrentUser().then(updateUser).catch(() => {
       // Mantém a sessão local visível se a rede estiver temporariamente indisponível.
     });
+
+    return () => {
+      mounted = false;
+      stopAutoRefresh();
+      window.removeEventListener('pomocute:auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const openAuth = () => {
