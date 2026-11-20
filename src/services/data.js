@@ -90,11 +90,12 @@ export async function removeMusicLink(id) {
   return supabaseDataRequest(`music_links?id=eq.${encode(id)}`, { method: 'DELETE' });
 }
 
-export async function recordFocusSession(mode, durationSeconds) {
+export async function recordFocusSession(mode, durationSeconds, syncId, sessionUserId) {
   const user = getStoredUser();
-  if (!user || mode !== 'pomodoro') return null;
-  return supabaseDataRequest('focus_sessions', {
+  if (!user || user.id !== sessionUserId || mode !== 'pomodoro' || !syncId) return null;
+  return supabaseDataRequest('focus_sessions?on_conflict=user_id,client_id', {
     method: 'POST',
-    body: { user_id: user.id, mode, duration_seconds: durationSeconds, completed: true },
+    prefer: 'resolution=ignore-duplicates,return=minimal',
+    body: { user_id: user.id, client_id: syncId, mode, duration_seconds: durationSeconds, completed: true },
   });
 }

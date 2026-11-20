@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import App from './App';
+import * as data from './services/data';
 beforeEach(() => {
   delete window.documentPictureInPicture;
   localStorage.clear();
@@ -169,6 +170,37 @@ test('quarta conclusão sugere pausa longa e recarga não duplica o contador', (
   expect(screen.getByText('Sessão finalizada, escolha uma pausa')).toBeInTheDocument();
 });
 
+test('a conclusão reutiliza a mesma chave ao restaurar a sessão', () => {
+  const recordSession = jest.spyOn(data, 'recordFocusSession').mockResolvedValue(null);
+  const first = render(<App />);
+  click('Começar');
+  const syncId = JSON.parse(localStorage.getItem('pomocute-session-v1')).syncId;
+  expect(syncId).toMatch(/^[0-9a-f-]{36}$/i);
+
+  act(() => {
+    jest.setSystemTime(Date.now() + 1500000);
+    window.dispatchEvent(new Event('focus'));
+  });
+  expect(recordSession).toHaveBeenCalledTimes(1);
+  expect(recordSession).toHaveBeenNthCalledWith(1, 'pomodoro', 1500, syncId, null);
+
+  first.unmount();
+  render(<App />);
+  expect(recordSession).toHaveBeenCalledTimes(2);
+  expect(recordSession).toHaveBeenNthCalledWith(2, 'pomodoro', 1500, syncId, null);
+});
+
+test('sessões concluídas antigas sem chave estável não são registradas novamente', () => {
+  const recordSession = jest.spyOn(data, 'recordFocusSession').mockResolvedValue(null);
+  localStorage.setItem('pomocute-session-v1', JSON.stringify({
+    mode: 'pomodoro', status: 'completed', remaining: 0, deadline: null, count: 1,
+  }));
+
+  render(<App />);
+
+  expect(recordSession).not.toHaveBeenCalled();
+});
+
 test('mantém modos fora da esfera e apenas o controle principal no timer', () => {
   render(<App />);
   expect(document.querySelector('.timer-card .session-mode-selector')).not.toBeInTheDocument();
@@ -301,7 +333,8 @@ test('alterna as configurações pelo mesmo botão', () => {
   expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('abre a conta autenticada com a opção de sair', () => {
+test('abre a conta autenticada com a opção de sair', async () => {
+  const fetchRequest = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Rede desativada no teste'));
   localStorage.setItem('pomocute-auth-v1', JSON.stringify({
     access_token: 'test-token',
     user: {
@@ -321,6 +354,8 @@ test('abre a conta autenticada com a opção de sair', () => {
   expect(profileButton).toHaveAttribute('aria-expanded', 'false');
   fireEvent.click(profileButton);
   click('Sair da conta');
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
   expect(localStorage.getItem('pomocute-auth-v1')).toBeNull();
   expect(screen.getByRole('button', { name: 'Entrar ou criar conta' })).toBeInTheDocument();
+  expect(fetchRequest.mock.calls.some(([url]) => String(url).includes('/auth/v1/logout'))).toBe(true);
 });

@@ -4,7 +4,7 @@ jest.mock('./auth', () => ({
 }));
 
 import { getStoredUser, supabaseDataRequest } from './auth';
-import { createMusicLink, createTask } from './data';
+import { createMusicLink, createTask, recordFocusSession } from './data';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -53,6 +53,33 @@ test('cria link de música com chave estável para repetição segura', async ()
       embed_url: link.embedUrl,
     },
   });
+});
+
+test('registra sessão concluída usando uma chave idempotente', async () => {
+  const syncId = '8c10d20a-0000-4000-8000-000000000003';
+
+  await recordFocusSession('pomodoro', 1500, syncId, 'user-1');
+
+  expect(supabaseDataRequest).toHaveBeenCalledWith('focus_sessions?on_conflict=user_id,client_id', {
+    method: 'POST',
+    prefer: 'resolution=ignore-duplicates,return=minimal',
+    body: {
+      user_id: 'user-1',
+      client_id: syncId,
+      mode: 'pomodoro',
+      duration_seconds: 1500,
+      completed: true,
+    },
+  });
+});
+
+test('não registra sessão sem conta ou sem chave estável', async () => {
+  await expect(recordFocusSession('pomodoro', 1500, undefined, 'user-1')).resolves.toBeNull();
+  getStoredUser.mockReturnValue(null);
+  await expect(recordFocusSession('pomodoro', 1500, '8c10d20a-0000-4000-8000-000000000003', 'user-1')).resolves.toBeNull();
+  getStoredUser.mockReturnValue({ id: 'user-2' });
+  await expect(recordFocusSession('pomodoro', 1500, '8c10d20a-0000-4000-8000-000000000003', 'user-1')).resolves.toBeNull();
+  expect(supabaseDataRequest).not.toHaveBeenCalled();
 });
 
 test('não envia dados locais sem uma conta autenticada', async () => {
