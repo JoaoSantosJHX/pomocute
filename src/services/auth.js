@@ -81,9 +81,9 @@ function shouldRefreshSession(session) {
   return Boolean(expiresAt && expiresAt <= nowInSeconds() + refreshLeewaySeconds);
 }
 
-async function request(path, body) {
+async function request(path, body, { authorization } = {}) {
   if (!authConfigured) throw new Error('Configure o Supabase para ativar o login.');
-  const response = await fetch(`${url}/auth/v1/${path}`, { method: 'POST', headers, body: JSON.stringify(body) });
+  const response = await fetch(`${url}/auth/v1/${path}`, { method: 'POST', headers: { ...headers, ...(authorization ? { Authorization: `Bearer ${authorization}` } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(payload.msg || payload.error_description || payload.message || 'Não foi possível concluir a autenticação.');
@@ -120,11 +120,12 @@ export function refreshSession() {
   const refreshPromise = (async () => {
     try {
       const refreshed = await request('token?grant_type=refresh_token', { refresh_token: session.refresh_token });
-      const nextSession = saveSession({ ...session, ...refreshed, user: refreshed.user || session.user });
+      if (readSession()?.refresh_token !== session.refresh_token) return readSession();
+      const nextSession = saveSession({ ...session, ...refreshed, created_at: nowInSeconds(), expires_at: refreshed.expires_at || undefined, user: refreshed.user || session.user });
       notifyAuthChange(nextSession?.user || null);
       return nextSession;
     } catch (error) {
-      if (isAuthenticationFailure(error.status)) clearSession();
+      if (isAuthenticationFailure(error.status) && readSession()?.refresh_token === session.refresh_token) clearSession();
       throw error;
     }
   })();
@@ -139,16 +140,14 @@ export async function signInWithPassword(email, password) {
   const session = await request('token?grant_type=password', { email, password });
   const savedSession = saveSession(session);
   notifyAuthChange(savedSession?.user || null);
-  return savedSession?.user || null;
+  return { user: savedSession?.user || null, session: savedSession };
 }
 
 export async function signUpWithPassword(email, password, fullName) {
   const result = await request('signup', { email, password, data: { full_name: fullName } });
-  if (result.access_token) {
-    const session = saveSession(result);
-    notifyAuthChange(session?.user || null);
-  }
-  return result.user;
+  const session = result.access_token ? saveSession(result) : null;
+  if (session) notifyAuthChange(session.user || null);
+  return { user: result.user || session?.user || null, session };
 }
 
 export function signInWithGoogle() {
@@ -197,11 +196,12 @@ export async function loadCurrentUser() {
   }
 
   if (!response.ok) {
-    if (isAuthenticationFailure(response.status)) clearSession();
+    if (isAuthenticationFailure(response.status) && readSession()?.access_token === session.access_token) clearSession();
     return readSession()?.user || null;
   }
 
   const user = await response.json();
+  if (readSession()?.access_token !== session.access_token) return readSession()?.user || null;
   saveSession({ ...session, user });
   notifyAuthChange(user);
   return user;
@@ -234,17 +234,25 @@ export function startSessionAutoRefresh() {
   };
 }
 
-export function signOut() { clearSession(); }
+export async function signOut() {
+  const session = readSession();
+  clearSession();
+  try {
+    if (authConfigured && session?.access_token) await request('logout', undefined, { authorization: session.access_token });
+  } catch (_) {
+    // Encerrar a sessão local não depende da rede.
+  }
+}
 
-async function requestData(path, method, body, accessToken) {
+async function requestData(path, method, body, accessToken, prefer) {
   return fetch(`${url}/rest/v1/${path}`, {
     method,
-    headers: { ...headers, Authorization: `Bearer ${accessToken}`, Prefer: 'return=representation' },
+    headers: { ...headers, Authorization: `Bearer ${accessToken}`, Prefer: prefer },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 }
 
-export async function supabaseDataRequest(path, { method = 'GET', body } = {}) {
+export async function supabaseDataRequest(path, { method = 'GET', body, prefer = 'return=representation' } = {}) {
   if (!authConfigured || !readSession()?.access_token) return null;
 
   let session;
@@ -255,7 +263,7 @@ export async function supabaseDataRequest(path, { method = 'GET', body } = {}) {
   }
   if (!session?.access_token) return null;
 
-  let response = await requestData(path, method, body, session.access_token);
+  let response = await requestData(path, method, body, session.access_token, prefer);
   if (isAuthenticationFailure(response.status)) {
     try {
       session = await getUsableSession({ forceRefresh: true });
@@ -264,7 +272,7 @@ export async function supabaseDataRequest(path, { method = 'GET', body } = {}) {
       throw new Error('Não foi possível renovar sua sessão.');
     }
     if (!session?.access_token) return null;
-    response = await requestData(path, method, body, session.access_token);
+    response = await requestData(path, method, body, session.access_token, prefer);
   }
 
   if (!response.ok) throw new Error('Não foi possível sincronizar seus dados.');

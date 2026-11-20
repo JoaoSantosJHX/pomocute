@@ -108,7 +108,7 @@ export default function Timer({ onSceneAction }) {
   const durationMs = durationSeconds(preferences, mode) * 1000;
   const progress = Math.min(1, Math.max(0, remainingMs / durationMs));
   const ringCircumference = 2 * Math.PI * 48.5;
-  const isSessionLocked = status === 'running' || status === 'paused';
+  const isSessionLocked = status === 'running';
 
   useEffect(() => {
     try {
@@ -367,7 +367,7 @@ function TimerView({
         key={key}
         className={mode === key ? 'active' : ''}
         aria-pressed={mode === key}
-        disabled={status === 'running'}
+        disabled={isSessionLocked}
         onClick={() => onSelectMode(key)}
       >{labels[key]}</button>)}
     </nav>

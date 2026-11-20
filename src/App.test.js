@@ -168,7 +168,7 @@ test('mantém modos fora da esfera e apenas o controle principal no timer', () =
   expect(screen.queryByRole('button', { name: 'Encerrar' })).not.toBeInTheDocument();
 });
 
-test('habilita as pausas quando o foco é pausado', () => {
+test('permite trocar para uma pausa quando o foco está pausado', () => {
   render(<App />);
   click('Começar');
   click('Pausar');
@@ -274,7 +274,7 @@ test('mostra tarefas recentes no topo e permite excluí-las', () => {
 
   click('Excluir Tarefa recente');
   expect(taskTitles()).toEqual(['Tarefa antiga']);
-  expect(JSON.parse(localStorage.getItem('pomocute-tasks-v1'))).toEqual([{ id: 'older-task', title: 'Tarefa antiga', done: false }]);
+  expect(JSON.parse(localStorage.getItem('pomocute-tasks-v1'))).toEqual([expect.objectContaining({ id: 'older-task', title: 'Tarefa antiga', done: false })]);
 
   fireEvent.change(screen.getByLabelText('Nova tarefa'), { target: { value: 'Tarefa nova' } });
   click('Adicionar tarefa');
