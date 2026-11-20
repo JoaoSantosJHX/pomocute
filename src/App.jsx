@@ -6,7 +6,6 @@ const scenes = {
   home: [
     '/videos/home/home_page1.mp4',
     '/videos/home/home_page2.mp4',
-    '/videos/home/home_page3.mp4',
   ],
   focus: [
     '/videos/estudo/estudo_3.mp4',
