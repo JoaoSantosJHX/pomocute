@@ -387,14 +387,18 @@ function TimerView({
         <svg viewBox="0 0 100 100" aria-hidden="true">
           <defs>
             <linearGradient id="timer-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#f6daf0" />
-              <stop offset="48%" stopColor="#e78dc4" />
-              <stop offset="100%" stopColor="#9e8aff" />
+              <stop offset="0%" stopColor="#ef8bc9" />
+              <stop offset="25%" stopColor="#f8b7e0" />
+              <stop offset="38%" stopColor="#fff4fb" />
+              <stop offset="43%" stopColor="#ffe0f3" />
+              <stop offset="59%" stopColor="#e890ce" />
+              <stop offset="79%" stopColor="#d39aee" />
+              <stop offset="100%" stopColor="#b197ff" />
             </linearGradient>
           </defs>
           <circle className="timer-progress-ring__track" cx="50" cy="50" r="48.5" />
           <circle
-            className="timer-progress-ring__value"
+            className={status === 'running' ? 'timer-progress-ring__value timer-progress-ring__value--running' : 'timer-progress-ring__value'}
             cx="50"
             cy="50"
             r="48.5"

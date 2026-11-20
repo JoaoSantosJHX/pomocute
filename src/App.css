@@ -56,10 +56,6 @@
 }
 
 .timer-card {
-  background-color: rgba(255, 209, 235, 0.25); /* rosa com transparência */
-  backdrop-filter: blur(12px); /* efeito vidro */
-  -webkit-backdrop-filter: blur(12px); /* suporte Safari */
-  
   padding: 40px 30px;
   border-radius: 20px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -288,9 +284,6 @@
 .app-container { min-height: 100vh; min-height: 100dvh; height: auto; width: 100%; padding: 24px 16px; }
 .timer-card {
   box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(255, 218, 239, .38), rgba(255, 190, 224, .24));
-  backdrop-filter: blur(18px) saturate(125%);
-  -webkit-backdrop-filter: blur(18px) saturate(125%);
   border: 1px solid rgba(255, 255, 255, .46);
   box-shadow: 0 18px 45px rgba(66, 31, 61, .22), inset 0 1px 0 rgba(255, 255, 255, .38);
 }
@@ -529,27 +522,45 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 
 /* Contador circular inspirado no anel de progresso do Pomodoro Timer. */
 .timer-card {
+  --timer-diameter: 330px;
   display: flex;
-  width: min(390px, calc(100vw - 32px));
+  width: min(var(--timer-diameter), calc(100vw - 32px));
   max-width: none;
   aspect-ratio: 1;
   padding: 40px;
   border-radius: 50%;
   flex-direction: column;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   transform: scale(calc(1 + var(--music-energy, 0) * .022));
   border: 0;
-  background: radial-gradient(circle at 32% 26%, rgba(255, 231, 244, .4), rgba(195, 174, 247, .2) 54%, rgba(110, 88, 172, .14));
+  background: transparent;
+  box-shadow: none;
   transition: transform .12s ease;
 }
 .timer-card > :not(.timer-progress-ring) { position: relative; z-index: 1; }
 .timer-progress-ring { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-.timer-progress-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer-progress-ring svg { display: block; width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
 .timer-progress-ring circle { fill: none; stroke-width: 2.4; }
 .timer-progress-ring__track { stroke: rgba(255, 255, 255, .2); }
-.timer-progress-ring__value { stroke: url(#timer-ring-gradient); stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(255, 222, 245, .6)); transition: stroke-dashoffset .25s linear; }
+.timer-progress-ring__value {
+  stroke: url(#timer-ring-gradient);
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(255, 177, 227, .55));
+  transition: stroke-dashoffset .25s linear;
+}
+.timer-progress-ring__value--running { animation: timer-ring-pulse 4s ease-in-out infinite; }
+@keyframes timer-ring-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 177, 227, .55)); }
+  50% { filter: drop-shadow(0 0 8px rgba(255, 198, 239, .85)); }
+}
 .timer-card .timer-display { margin: 12px 0 18px; font-size: clamp(3.8rem, 8vw, 5rem); line-height: .95; }
+.timer-card .timer-display,
+.timer-card .session-status,
+.timer-card .timer-next-mode {
+  color: #fff;
+  text-shadow: 0 1px 3px #241830, 0 2px 8px #241830;
+}
 .app-header {
   position: fixed;
   z-index: 2;
@@ -648,7 +659,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .timer-reset:hover,
 .timer-reset:focus-visible { opacity: 1; }
 .timer-next-mode { margin: -2px 0 10px; font-size: .78rem; font-weight: 650; }
-.timer-card--focus { width: min(390px, calc(100vw - 32px)); max-width: none; padding: 40px; }
+.timer-card--focus { max-width: none; padding: 40px; }
 .timer-card--focus .timer-display { margin: 12px 0 18px; }
 .timer-card--embed-reactive { animation: external-player-bounce 1.05s ease-in-out infinite; }
 @keyframes external-player-bounce {
@@ -726,7 +737,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   .session-mode-selector button { padding-bottom: 7px; font-size: .76rem; }
   .timer-card,
   .timer-card--focus,
-  .timer-card--focus.timer-card--details-visible { width: min(90vw, 390px); padding: 34px; }
+  .timer-card--focus.timer-card--details-visible { width: min(90vw, var(--timer-diameter)); padding: 34px; }
   .timer-progress-ring { inset: 0; }
   .timer-card .tabs { gap: 6px; }
   .timer-card .tab-button { padding: 8px 10px; font-size: .8rem; }
@@ -752,6 +763,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 }
 @media (max-width: 420px) { .timer-card { padding: 24px 14px; } .timer-display { font-size: clamp(3rem, 20vw, 5rem); } .tab-button { padding: 10px 12px; } }
 @media (prefers-reduced-motion: reduce) {
+  .timer-progress-ring__value { animation: none; }
   button, .background-scene { transition: none !important; animation: none !important; }
   .background-scene--current, .background-scene--current.is-ready { opacity: 1; }
   .background-scene--previous, .background-scene--previous.is-fading { opacity: 0; }
