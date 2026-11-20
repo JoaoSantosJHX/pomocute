@@ -337,13 +337,11 @@ function TimerView({
     short: t('mode.short'),
     long: t('mode.long'),
   };
-  const messages = {
-    ready: t('status.ready'),
-    running: mode === 'pomodoro' ? t('status.runningFocus') : t('status.runningBreak'),
-    paused: t('status.paused'),
-    completed: t('status.completed'),
-    ended: t('status.ended'),
-  };
+  const isBreak = mode !== 'pomodoro';
+  const statusLabel = status === 'ended' ? 'ready' : status;
+  const statusMessage = isBreak && (status === 'running' || status === 'paused')
+    ? ''
+    : t(`status.${statusLabel}${isBreak ? 'Break' : ''}`);
   const isFocusMode = status === 'running' || status === 'paused';
   const timerActionLabel = status === 'running' ? t('timer.pause') : status === 'paused' ? t('timer.resume') : t('timer.start');
 
@@ -407,7 +405,6 @@ function TimerView({
           />
         </svg>
       </div>
-      <p className="session-status" role="status">{messages[status]}</p>
       <div className="timer-display" role="timer" aria-label={t('timer.remaining')} aria-live="off">
         {formatTime(remainingMs)}
       </div>
@@ -431,8 +428,8 @@ function TimerView({
           <FaStop aria-hidden="true" />
         </button>
       </div>
-      {status === 'completed' && <p className="timer-next-mode">{t('timer.chooseBreak')}</p>}
     </main>
+    <p className="timer-status" role="status">{statusMessage}</p>
 
     <FloatingMiniTimer
       mode={mode}

@@ -303,8 +303,7 @@
 .timer-card--focus .button-group { margin-bottom: 14px; }
 
 .timer-card--focus .timer-expanded,
-.timer-card--focus .audio-details,
-.timer-card--focus .session-status {
+.timer-card--focus .audio-details {
   max-height: 0;
   margin-top: 0;
   margin-bottom: 0;
@@ -318,8 +317,7 @@
 .timer-card--focus.timer-card--details-visible { max-width: 400px; padding: 40px 30px; }
 
 .timer-card--focus.timer-card--details-visible .timer-expanded,
-.timer-card--focus.timer-card--details-visible .audio-details,
-.timer-card--focus.timer-card--details-visible .session-status {
+.timer-card--focus.timer-card--details-visible .audio-details {
   max-height: 360px;
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -556,8 +554,7 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 }
 .timer-card .timer-display { margin: 12px 0 18px; font-size: clamp(3.8rem, 8vw, 5rem); line-height: .95; }
 .timer-card .timer-display,
-.timer-card .session-status,
-.timer-card .timer-next-mode {
+.timer-status {
   color: #fff;
   text-shadow: 0 1px 3px #241830, 0 2px 8px #241830;
 }
@@ -633,7 +630,16 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   font-size: .84rem;
   white-space: nowrap;
 }
-.timer-card .session-status { margin: 0 0 16px; font-size: .9rem; }
+.timer-status {
+  position: relative;
+  z-index: 1;
+  margin: 16px 0 0;
+  max-width: 100%;
+  min-height: 1.25em;
+  text-align: center;
+  font-size: .9rem;
+  font-weight: 650;
+}
 .timer-actions { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 auto 12px; }
 .timer-toggle {
   display: grid;
@@ -658,7 +664,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .timer-reset { font-size: 1.05rem; opacity: .92; }
 .timer-reset:hover,
 .timer-reset:focus-visible { opacity: 1; }
-.timer-next-mode { margin: -2px 0 10px; font-size: .78rem; font-weight: 650; }
 .timer-card--focus { max-width: none; padding: 40px; }
 .timer-card--focus .timer-display { margin: 12px 0 18px; }
 .timer-card--embed-reactive { animation: external-player-bounce 1.05s ease-in-out infinite; }

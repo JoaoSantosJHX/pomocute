@@ -82,19 +82,28 @@ test('pausa e retoma preservando o tempo, sem contar encerramentos', () => {
   click('Retomar');
   click('Abrir mini-timer flutuante');
   click('Encerrar sessão');
-  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+  expect(screen.getByText('Iniciar sessão')).toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(0);
   openWindow.mockRestore();
 });
 test('sincroniza ao retornar após suspensão e conta apenas uma vez', () => {
-  render(<App />); click('Começar');
+  render(<App />);
+  expect(screen.getByRole('status')).toHaveTextContent('Iniciar sessão');
+  click('Começar');
+  expect(screen.getByRole('status')).toHaveTextContent('Sessão em andamento');
   act(() => { jest.setSystemTime(Date.now() + 1500001); window.dispatchEvent(new Event('focus')); });
-  expect(screen.getByText('Sessão concluída!')).toBeInTheDocument();
+  expect(screen.getByText('Sessão finalizada, escolha uma pausa')).toBeInTheDocument();
   expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
   act(() => jest.advanceTimersByTime(5000));
   expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
-  click('Pausa curta'); click('Começar');
+  click('Pausa curta');
+  expect(screen.getByRole('status')).toHaveTextContent('Iniciar pausa');
+  click('Começar');
+  expect(screen.getByRole('status')).toBeEmptyDOMElement();
   act(() => jest.advanceTimersByTime(300000));
+  const status = screen.getByRole('status');
+  expect(status).toHaveTextContent('Pausa concluída');
+  expect(screen.getByRole('main')).not.toContainElement(status);
   expect(JSON.parse(localStorage.getItem('pomocute-session-v1')).count).toBe(1);
 });
 test('restaura sessão ativa após recarga', () => {
@@ -155,9 +164,9 @@ test('quarta conclusão sugere pausa longa e recarga não duplica o contador', (
   localStorage.setItem('pomocute-session-v1', JSON.stringify({ mode: 'pomodoro', status: 'running',
     remaining: 1500000, deadline: Date.now() - 1, count: 3 }));
   const first = render(<App />);
-  expect(screen.getByText('Escolha uma pausa acima para continuar.')).toBeInTheDocument();
+  expect(screen.getByText('Sessão finalizada, escolha uma pausa')).toBeInTheDocument();
   first.unmount(); render(<App />);
-  expect(screen.getByText('Escolha uma pausa acima para continuar.')).toBeInTheDocument();
+  expect(screen.getByText('Sessão finalizada, escolha uma pausa')).toBeInTheDocument();
 });
 
 test('mantém modos fora da esfera e apenas o controle principal no timer', () => {
@@ -177,7 +186,7 @@ test('permite trocar para uma pausa quando o foco está pausado', () => {
   expect(shortBreak).not.toBeDisabled();
   expect(longBreak).not.toBeDisabled();
   fireEvent.click(shortBreak);
-  expect(screen.getByText('Pronto para começar')).toBeInTheDocument();
+  expect(screen.getByText('Iniciar pausa')).toBeInTheDocument();
   expect(screen.getByRole('timer')).toHaveTextContent('05:00');
 });
 test('dados locais inválidos não impedem iniciar uma sessão', () => {
@@ -185,7 +194,7 @@ test('dados locais inválidos não impedem iniciar uma sessão', () => {
   render(<App />);
   expect(screen.getByRole('timer')).toHaveTextContent('25:00');
   click('Começar');
-  expect(screen.getByText('Hora de focar')).toBeInTheDocument();
+  expect(screen.getByText('Sessão em andamento')).toBeInTheDocument();
 });
 
 test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', async () => {
@@ -219,7 +228,7 @@ test('abre mini-timer em uma janela PiP e mantém os controles sincronizados', a
   expect(screen.getByRole('button', { name: 'Retomar timer' })).toBeInTheDocument();
   expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Encerrar sessão' }));
-  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+  expect(screen.getByText('Iniciar sessão')).toBeInTheDocument();
 });
 
 test('mantém um mini-timer dentro da página quando PiP não está disponível', () => {
@@ -235,7 +244,7 @@ test('mantém um mini-timer dentro da página quando PiP não está disponível'
   fireEvent.click(within(fallback).getByRole('button', { name: 'Pausar timer' }));
   expect(screen.getByText('Sessão pausada')).toBeInTheDocument();
   fireEvent.click(within(fallback).getByRole('button', { name: 'Encerrar sessão' }));
-  expect(screen.getByText('Sessão encerrada sem contabilizar')).toBeInTheDocument();
+  expect(screen.getByText('Iniciar sessão')).toBeInTheDocument();
   openWindow.mockRestore();
 });
 
