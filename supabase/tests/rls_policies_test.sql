@@ -55,21 +55,23 @@ select is(
   'outra pessoa não vê tarefas alheias'
 );
 
-select is(
-  (with changed as (
+with changed as (
     update public.tasks set title = 'Alteração indevida'
     where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
     returning 1
-  ) select count(*)::integer from changed),
+)
+select is(
+  (select count(*)::integer from changed),
   0,
   'outra pessoa não atualiza tarefa alheia'
 );
 
-select is(
-  (with removed as (
+with removed as (
     delete from public.tasks where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
     returning 1
-  ) select count(*)::integer from removed),
+)
+select is(
+  (select count(*)::integer from removed),
   0,
   'outra pessoa não remove tarefa alheia'
 );
@@ -80,12 +82,13 @@ select is(
   'outra pessoa não vê links de música alheios'
 );
 
-select is(
-  (with changed as (
+with changed as (
     update public.music_links set title = 'Alteração indevida'
     where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
     returning 1
-  ) select count(*)::integer from changed),
+)
+select is(
+  (select count(*)::integer from changed),
   0,
   'outra pessoa não atualiza link de música alheio'
 );

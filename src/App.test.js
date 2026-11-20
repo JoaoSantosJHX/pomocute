@@ -261,6 +261,26 @@ test('atualiza a duração parada e bloqueia a edição durante a sessão', () =
   expect(screen.getByText(/durações ficam bloqueadas/i)).toBeInTheDocument();
 });
 
+test('mostra tarefas recentes no topo e permite excluí-las', () => {
+  localStorage.setItem('pomocute-tasks-v1', JSON.stringify([
+    { id: 'older-task', title: 'Tarefa antiga', done: false },
+    { id: 'newer-task', title: 'Tarefa recente', done: true },
+  ]));
+  render(<App />);
+  click('Abrir tarefas');
+
+  const taskTitles = () => [...document.querySelectorAll('.tasks-menu__task span')].map(element => element.textContent);
+  expect(taskTitles()).toEqual(['Tarefa recente', 'Tarefa antiga']);
+
+  click('Excluir Tarefa recente');
+  expect(taskTitles()).toEqual(['Tarefa antiga']);
+  expect(JSON.parse(localStorage.getItem('pomocute-tasks-v1'))).toEqual([expect.objectContaining({ id: 'older-task', title: 'Tarefa antiga', done: false })]);
+
+  fireEvent.change(screen.getByLabelText('Nova tarefa'), { target: { value: 'Tarefa nova' } });
+  click('Adicionar tarefa');
+  expect(taskTitles()).toEqual(['Tarefa nova', 'Tarefa antiga']);
+});
+
 test('alterna as configurações pelo mesmo botão', () => {
   render(<App />);
   const settingsButton = screen.getByRole('button', { name: 'Configurações' });

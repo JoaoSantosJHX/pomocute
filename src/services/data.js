@@ -50,6 +50,9 @@ export async function updateTask(task) {
   });
   return rows?.[0] || null;
 }
+export async function deleteTask(id) {
+  return supabaseDataRequest(`tasks?id=eq.${encode(id)}`, { method: 'DELETE' });
+}
 
 export async function listMusicLinks() {
   return supabaseDataRequest('music_links?select=id,client_id,platform,title,source_url,embed_url,created_at&order=created_at.asc');

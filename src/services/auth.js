@@ -1,10 +1,56 @@
 const storageKey = 'pomocute-auth-v1';
+const refreshLeewaySeconds = 60;
+const refreshIntervalMs = 60 * 1000;
 const url = process.env.REACT_APP_SUPABASE_URL?.replace(/\/$/, '');
 const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const refreshLeewayMs = 60 * 1000;
+let refreshInFlight = null;
 
 export const authConfigured = Boolean(url && anonKey && !url.includes('SEU-PROJETO'));
 const headers = { 'Content-Type': 'application/json', ...(anonKey ? { apikey: anonKey } : {}) };
+
+function nowInSeconds() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function asTimestamp(value) {
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+  return Math.floor(timestamp > 100000000000 ? timestamp / 1000 : timestamp);
+}
+
+function getTokenExpiration(accessToken) {
+  if (!accessToken || typeof window === 'undefined' || typeof window.atob !== 'function') return null;
+  try {
+    const encoded = accessToken.split('.')[1];
+    if (!encoded) return null;
+    const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')));
+    return asTimestamp(payload.exp);
+  } catch (_) {
+    return null;
+  }
+}
+
+function getSessionExpiration(session) {
+  const explicitExpiration = asTimestamp(session?.expires_at);
+  if (explicitExpiration) return explicitExpiration;
+
+  const tokenExpiration = getTokenExpiration(session?.access_token);
+  if (tokenExpiration) return tokenExpiration;
+
+  const createdAt = asTimestamp(session?.created_at);
+  const expiresIn = Number(session?.expires_in);
+  return createdAt && Number.isFinite(expiresIn) && expiresIn > 0
+    ? createdAt + Math.floor(expiresIn)
+    : null;
+}
+
+function normalizeSession(session) {
+  if (!session) return null;
+  const normalized = { ...session, created_at: asTimestamp(session.created_at) || nowInSeconds() };
+  const expiresAt = getSessionExpiration(normalized);
+  return expiresAt ? { ...normalized, expires_at: expiresAt } : normalized;
+}
 
 function readSession() {
   try { return JSON.parse(localStorage.getItem(storageKey)); } catch (_) { return null; }
@@ -15,90 +61,93 @@ function notifyAuthChange(user = null) {
 }
 
 function saveSession(session) {
-  if (session) localStorage.setItem(storageKey, JSON.stringify(session));
+  const normalized = normalizeSession(session);
+  if (normalized) localStorage.setItem(storageKey, JSON.stringify(normalized));
   else localStorage.removeItem(storageKey);
+  return normalized;
 }
 
-function toSession(payload, previousSession = null) {
-  if (!payload?.access_token) return null;
-  const expiresIn = Number(payload.expires_in || 0);
-  const expiresAt = Number(payload.expires_at) || (expiresIn > 0 ? Math.floor(Date.now() / 1000) + expiresIn : null);
-  return {
-    access_token: payload.access_token,
-    refresh_token: payload.refresh_token || previousSession?.refresh_token || null,
-    expires_in: expiresIn || null,
-    expires_at: expiresAt,
-    token_type: payload.token_type || previousSession?.token_type || 'bearer',
-    user: payload.user || previousSession?.user || null,
-  };
+function clearSession() {
+  saveSession(null);
+  notifyAuthChange(null);
 }
 
-function isExpiring(session) {
-  const expiresAt = Number(session?.expires_at);
-  return Number.isFinite(expiresAt) && expiresAt * 1000 <= Date.now() + refreshLeewayMs;
+function isAuthenticationFailure(status) {
+  return status === 400 || status === 401 || status === 403;
+}
+
+function shouldRefreshSession(session) {
+  const expiresAt = getSessionExpiration(session);
+  return Boolean(expiresAt && expiresAt <= nowInSeconds() + refreshLeewaySeconds);
 }
 
 async function request(path, body, { authorization } = {}) {
   if (!authConfigured) throw new Error('Configure o Supabase para ativar o login.');
-  const response = await fetch(`${url}/auth/v1/${path}`, {
-    method: 'POST',
-    headers: { ...headers, ...(authorization ? { Authorization: `Bearer ${authorization}` } : {}) },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  const response = await fetch(`${url}/auth/v1/${path}`, { method: 'POST', headers: { ...headers, ...(authorization ? { Authorization: `Bearer ${authorization}` } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.msg || payload.error_description || payload.message || 'Não foi possível concluir a autenticação.');
+  if (!response.ok) {
+    const error = new Error(payload.msg || payload.error_description || payload.message || 'Não foi possível concluir a autenticação.');
+    error.status = response.status;
+    throw error;
+  }
   return payload;
 }
 
-async function refreshSession(session = readSession()) {
-  if (!session?.refresh_token || !authConfigured) return null;
-  try {
-    const payload = await request('token?grant_type=refresh_token', { refresh_token: session.refresh_token });
-    const refreshedSession = toSession(payload, session);
-    if (!refreshedSession) return null;
-    saveSession(refreshedSession);
-    notifyAuthChange(refreshedSession.user || null);
-    return refreshedSession;
-  } catch (_) {
-    return null;
-  }
+async function fetchCurrentUser(accessToken) {
+  return fetch(`${url}/auth/v1/user`, { headers: { ...headers, Authorization: `Bearer ${accessToken}` } });
 }
 
-async function activeSession() {
+async function getUsableSession({ forceRefresh = false } = {}) {
   const session = readSession();
   if (!session?.access_token) return null;
-  if (!isExpiring(session)) return session;
-  return refreshSession(session);
-}
-
-async function currentUserRequest(session) {
-  return fetch(`${url}/auth/v1/user`, {
-    headers: { ...headers, Authorization: `Bearer ${session.access_token}` },
-  });
+  if (!forceRefresh && !shouldRefreshSession(session)) return session;
+  return refreshSession();
 }
 
 export function getStoredSession() { return readSession(); }
 export function getStoredUser() { return readSession()?.user || null; }
 export function getAccessToken() { return readSession()?.access_token || null; }
 
-export async function signInWithPassword(email, password) {
-  const payload = await request('token?grant_type=password', { email, password });
-  const session = toSession(payload);
-  if (session) {
-    saveSession(session);
-    notifyAuthChange(session.user || null);
+export function refreshSession() {
+  if (refreshInFlight) return refreshInFlight;
+
+  const session = readSession();
+  if (!session?.refresh_token) {
+    if (session) clearSession();
+    return Promise.resolve(null);
   }
-  return { user: payload.user || session?.user || null, session };
+
+  const refreshPromise = (async () => {
+    try {
+      const refreshed = await request('token?grant_type=refresh_token', { refresh_token: session.refresh_token });
+      if (readSession()?.refresh_token !== session.refresh_token) return readSession();
+      const nextSession = saveSession({ ...session, ...refreshed, created_at: nowInSeconds(), expires_at: refreshed.expires_at || undefined, user: refreshed.user || session.user });
+      notifyAuthChange(nextSession?.user || null);
+      return nextSession;
+    } catch (error) {
+      if (isAuthenticationFailure(error.status) && readSession()?.refresh_token === session.refresh_token) clearSession();
+      throw error;
+    }
+  })();
+
+  refreshInFlight = refreshPromise.finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+export async function signInWithPassword(email, password) {
+  const session = await request('token?grant_type=password', { email, password });
+  const savedSession = saveSession(session);
+  notifyAuthChange(savedSession?.user || null);
+  return { user: savedSession?.user || null, session: savedSession };
 }
 
 export async function signUpWithPassword(email, password, fullName) {
-  const payload = await request('signup', { email, password, data: { full_name: fullName } });
-  const session = toSession(payload);
-  if (session) {
-    saveSession(session);
-    notifyAuthChange(session.user || null);
-  }
-  return { user: payload.user || session?.user || null, session };
+  const result = await request('signup', { email, password, data: { full_name: fullName } });
+  const session = result.access_token ? saveSession(result) : null;
+  if (session) notifyAuthChange(session.user || null);
+  return { user: result.user || session?.user || null, session };
 }
 
 export function signInWithGoogle() {
@@ -109,75 +158,121 @@ export function signInWithGoogle() {
 
 export function captureOAuthSession() {
   const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const session = toSession({
-    access_token: params.get('access_token'),
+  const accessToken = params.get('access_token');
+  if (!accessToken) return null;
+  const session = saveSession({
+    access_token: accessToken,
     refresh_token: params.get('refresh_token'),
     expires_in: Number(params.get('expires_in') || 0),
-    token_type: params.get('token_type'),
+    expires_at: Number(params.get('expires_at') || 0) || undefined,
+    user: null,
   });
-  if (!session) return null;
-  saveSession(session);
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
   return session;
 }
 
 export async function loadCurrentUser() {
-  let session = await activeSession();
-  if (!session || !authConfigured) return null;
+  const storedSession = readSession();
+  if (!storedSession?.access_token) return null;
+  if (!authConfigured) return storedSession.user || null;
 
-  let response = await currentUserRequest(session);
-  if (response.status === 401) {
-    session = await refreshSession(session);
-    if (session) response = await currentUserRequest(session);
+  let session;
+  try {
+    session = await getUsableSession();
+  } catch (_) {
+    return readSession()?.user || null;
+  }
+  if (!session?.access_token) return null;
+
+  let response = await fetchCurrentUser(session.access_token);
+  if (isAuthenticationFailure(response.status)) {
+    try {
+      session = await getUsableSession({ forceRefresh: true });
+    } catch (_) {
+      return readSession()?.user || null;
+    }
+    if (!session?.access_token) return null;
+    response = await fetchCurrentUser(session.access_token);
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      saveSession(null);
-      notifyAuthChange(null);
-    }
-    return null;
+    if (isAuthenticationFailure(response.status) && readSession()?.access_token === session.access_token) clearSession();
+    return readSession()?.user || null;
   }
 
   const user = await response.json();
+  if (readSession()?.access_token !== session.access_token) return readSession()?.user || null;
   saveSession({ ...session, user });
   notifyAuthChange(user);
   return user;
 }
 
+export function startSessionAutoRefresh() {
+  if (!authConfigured || typeof window === 'undefined') return () => {};
+
+  const refreshIfNeeded = async () => {
+    const session = readSession();
+    if (!session || !shouldRefreshSession(session)) return;
+    try { await refreshSession(); } catch (_) {
+      // Mantém a sessão salva em falhas transitórias de rede.
+    }
+  };
+  const refreshOnFocus = () => { void refreshIfNeeded(); };
+  const refreshOnVisibility = () => {
+    if (document.visibilityState === 'visible') void refreshIfNeeded();
+  };
+
+  const interval = window.setInterval(refreshIfNeeded, refreshIntervalMs);
+  window.addEventListener('focus', refreshOnFocus);
+  document.addEventListener('visibilitychange', refreshOnVisibility);
+  void refreshIfNeeded();
+
+  return () => {
+    window.clearInterval(interval);
+    window.removeEventListener('focus', refreshOnFocus);
+    document.removeEventListener('visibilitychange', refreshOnVisibility);
+  };
+}
+
 export async function signOut() {
   const session = readSession();
-  // Encerrar a sessão local não depende da disponibilidade da rede.
-  saveSession(null);
-  notifyAuthChange(null);
-
+  clearSession();
   try {
-    if (authConfigured && session?.access_token) {
-      await request('logout', undefined, { authorization: session.access_token });
-    }
+    if (authConfigured && session?.access_token) await request('logout', undefined, { authorization: session.access_token });
   } catch (_) {
-    // O token local já foi removido.
+    // Encerrar a sessão local não depende da rede.
   }
 }
 
-export async function supabaseDataRequest(path, { method = 'GET', body, prefer = 'return=representation' } = {}) {
-  let session = await activeSession();
-  if (!authConfigured || !session?.access_token) return null;
-
-  const send = currentSession => fetch(`${url}/rest/v1/${path}`, {
+async function requestData(path, method, body, accessToken, prefer) {
+  return fetch(`${url}/rest/v1/${path}`, {
     method,
-    headers: {
-      ...headers,
-      Authorization: `Bearer ${currentSession.access_token}`,
-      Prefer: prefer,
-    },
+    headers: { ...headers, Authorization: `Bearer ${accessToken}`, Prefer: prefer },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
+}
 
-  let response = await send(session);
-  if (response.status === 401) {
-    session = await refreshSession(session);
-    if (session) response = await send(session);
+export async function supabaseDataRequest(path, { method = 'GET', body, prefer = 'return=representation' } = {}) {
+  if (!authConfigured || !readSession()?.access_token) return null;
+
+  let session;
+  try {
+    session = await getUsableSession();
+  } catch (_) {
+    session = readSession();
+  }
+  if (!session?.access_token) return null;
+
+  let response = await requestData(path, method, body, session.access_token, prefer);
+  if (isAuthenticationFailure(response.status)) {
+    try {
+      session = await getUsableSession({ forceRefresh: true });
+    } catch (_) {
+      if (!readSession()) return null;
+      throw new Error('Não foi possível renovar sua sessão.');
+    }
+    if (!session?.access_token) return null;
+    response = await requestData(path, method, body, session.access_token, prefer);
   }
 
   if (!response.ok) throw new Error('Não foi possível sincronizar seus dados.');

@@ -110,6 +110,7 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
   const [linkInput, setLinkInput] = useState('');
   const [linkError, setLinkError] = useState('');
   const [user, setUser] = useState(initialUser);
+  const userIdRef = useRef(initialUser?.id || null);
   const [customLinks, setCustomLinks] = useState(() => loadLinks(initialUser?.id));
   const [activeEmbed, setActiveEmbed] = useState(null);
   const audioRef = useRef(null);
@@ -140,14 +141,11 @@ export default function AudioPlayer({ volume, onVolumeChange, onEnergyChange, on
 
   useEffect(() => {
     const syncUser = event => {
-      const nextUser = event.detail?.user || getStoredUser();
-      if (nextUser?.id) {
-        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
-        setCustomLinks(loadLinks(nextUser.id));
-      } else {
-        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
-        setCustomLinks([]);
-      }
+      const nextUser = event.detail?.user ?? null;
+      const nextId = nextUser?.id || null;
+      if (userIdRef.current === nextId) return;
+      userIdRef.current = nextId;
+      setCustomLinks(loadLinks(nextId));
       setActiveEmbed(null);
       setUser(nextUser);
     };

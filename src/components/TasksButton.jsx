@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FaCheck, FaListCheck, FaPlus } from 'react-icons/fa6';
 import { FaTimes } from 'react-icons/fa';
 import { playClick } from './ClickSound';
 import { getStoredUser } from '../services/auth';
-import { createSyncId, createTask, listTasks, updateTask } from '../services/data';
+import { createSyncId, createTask, deleteTask, listTasks, updateTask } from '../services/data';
 import { useI18n } from '../i18n';
 
 const guestStorageKey = 'pomocute-tasks-v1';
@@ -50,6 +50,7 @@ export default function TasksButton() {
   const [title, setTitle] = useState('');
   const [user, setUser] = useState(initialUser);
   const [tasks, setTasks] = useState(() => loadTasks(initialUser?.id));
+  const userIdRef = useRef(initialUser?.id || null);
 
   useEffect(() => {
     try { localStorage.setItem(storageKeyFor(user?.id), JSON.stringify(tasks)); } catch (_) {}
@@ -58,15 +59,11 @@ export default function TasksButton() {
   useEffect(() => {
     const syncUser = event => {
       const nextUser = event.detail?.user || getStoredUser();
-      if (nextUser?.id) {
-        // Itens de visitante não são enviados automaticamente para uma conta.
-        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
-        setTasks(loadTasks(nextUser.id));
-      } else {
-        // Após sair, não exibimos os dados da conta anterior nem de outro visitante.
-        try { localStorage.removeItem(guestStorageKey); } catch (_) {}
-        setTasks([]);
-      }
+      const nextUserId = nextUser?.id || null;
+      if (nextUserId === userIdRef.current) return;
+      userIdRef.current = nextUserId;
+      // Cada conta e o visitante mantêm seu próprio cache.
+      setTasks(loadTasks(nextUserId));
       setUser(nextUser);
     };
     window.addEventListener('pomocute:auth-change', syncUser);
@@ -155,12 +152,17 @@ export default function TasksButton() {
       }
     }).catch(() => {});
   };
+  const removeTask = task => {
+    playClick();
+    setTasks(previous => previous.filter(item => item.id !== task.id));
+    if (user?.id && !task.id.startsWith('local-')) deleteTask(task.id).catch(() => {});
+  };
 
   return <div className="tasks-dock">
     {isOpen && <section className="tasks-menu" aria-label={t('tasks.title')}>
       <header><div><span>{t('tasks.eyebrow')}</span><strong>{t('tasks.title')}</strong></div><button type="button" aria-label={t('tasks.close')} onClick={() => setIsOpen(false)}><FaTimes /></button></header>
       <form onSubmit={addTask}><label className="sr-only" htmlFor="task-title">{t('tasks.new')}</label><input id="task-title" maxLength="280" value={title} onChange={event => setTitle(event.target.value)} placeholder={t('tasks.placeholder')} /><button type="submit" aria-label={t('tasks.add')}><FaPlus /></button></form>
-      {tasks.length > 0 && <ul>{tasks.map(task => <li key={task.syncId}><button type="button" className={task.done ? 'is-done' : ''} onClick={() => toggleTask(task)}><FaCheck aria-hidden="true" /><span>{task.title}</span></button></li>)}</ul>}
+      {tasks.length > 0 && <ul>{tasks.slice().reverse().map(task => <li key={task.syncId}><button type="button" className={`tasks-menu__task${task.done ? ' is-done' : ''}`} onClick={() => toggleTask(task)}><FaCheck aria-hidden="true" /><span>{task.title}</span></button><button type="button" className="tasks-menu__delete" onClick={() => removeTask(task)} aria-label={t('tasks.remove', { title: task.title })} title={t('tasks.remove', { title: task.title })}><FaTimes aria-hidden="true" /></button></li>)}</ul>}
     </section>}
     <button type="button" className="tasks-dock__trigger" onClick={() => { playClick(); setIsOpen(open => !open); }} aria-label={t('tasks.open')} aria-expanded={isOpen} title={t('tasks.title')}><FaListCheck aria-hidden="true" /></button>
   </div>;
