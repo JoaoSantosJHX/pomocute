@@ -50,8 +50,12 @@ export async function updateTask(task) {
   });
   return rows?.[0] || null;
 }
-export async function deleteTask(id) {
-  return supabaseDataRequest(`tasks?id=eq.${encode(id)}`, { method: 'DELETE' });
+export async function deleteTask(task) {
+  const isLocal = task.id.startsWith('local-');
+  const column = isLocal ? 'client_id' : 'id';
+  const value = isLocal ? task.syncId : task.id;
+  const rows = await supabaseDataRequest(`tasks?${column}=eq.${encode(value)}`, { method: 'DELETE' });
+  return Array.isArray(rows);
 }
 
 export async function listMusicLinks() {
