@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email)
 values
@@ -28,13 +28,32 @@ values (
   'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE'
 );
 
-insert into public.focus_sessions (id, user_id, mode, duration_seconds, completed)
+insert into public.focus_sessions (id, user_id, client_id, mode, duration_seconds, completed)
 values (
   'cccccccc-cccc-cccc-cccc-cccccccccccc',
   '11111111-1111-1111-1111-111111111111',
+  'cccccccc-cccc-cccc-cccc-cccccccccccd',
   'pomodoro',
   1500,
   true
+);
+
+insert into public.focus_sessions (user_id, client_id, mode, duration_seconds, completed)
+values (
+  '11111111-1111-1111-1111-111111111111',
+  'cccccccc-cccc-cccc-cccc-cccccccccccd',
+  'pomodoro',
+  1500,
+  true
+)
+on conflict (user_id, client_id) do nothing;
+
+select is(
+  (select count(*)::integer from public.focus_sessions
+    where user_id = '11111111-1111-1111-1111-111111111111'
+      and client_id = 'cccccccc-cccc-cccc-cccc-cccccccccccd'),
+  1,
+  'repetir uma gravação de sessão não cria duplicata'
 );
 
 set local role authenticated;

@@ -32,6 +32,7 @@ create table if not exists public.music_links (
 create table if not exists public.focus_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  client_id uuid not null default gen_random_uuid(),
   mode text not null check (mode in ('pomodoro', 'short', 'long')),
   duration_seconds integer not null check (duration_seconds > 0),
   completed boolean not null default false,
@@ -41,6 +42,7 @@ create table if not exists public.focus_sessions (
 create index if not exists tasks_user_id_idx on public.tasks (user_id);
 create index if not exists music_links_user_id_idx on public.music_links (user_id);
 create index if not exists focus_sessions_user_id_idx on public.focus_sessions (user_id);
+create unique index if not exists focus_sessions_user_client_id_key on public.focus_sessions (user_id, client_id);
 
 alter table public.profiles enable row level security;
 alter table public.tasks enable row level security;

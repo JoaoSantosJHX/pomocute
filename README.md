@@ -32,10 +32,10 @@ A chave `anon` pode ser exposta no cliente quando Row Level Security estiver ati
 ## Banco de dados e segurança
 
 - Para um ambiente novo, execute [`supabase/schema.sql`](./supabase/schema.sql).
-- Para um ambiente existente, aplique [`supabase/migrations/20261109_harden_mvp_sync_and_rls.sql`](./supabase/migrations/20261109_harden_mvp_sync_and_rls.sql) primeiro em ambiente de teste.
+- Para um ambiente existente, aplique [`supabase/migrations/20261109_harden_mvp_sync_and_rls.sql`](./supabase/migrations/20261109_harden_mvp_sync_and_rls.sql) e depois [`supabase/migrations/20261120_idempotent_focus_sessions.sql`](./supabase/migrations/20261120_idempotent_focus_sessions.sql), primeiro em ambiente de teste.
 - Em seguida, execute [`supabase/tests/rls_policies_test.sql`](./supabase/tests/rls_policies_test.sql) pelo runner de testes do Supabase. O teste verifica que uma conta não lê, altera ou remove dados de outra.
 
-A migração preserva os dados atuais e adiciona identificadores de sincronização estáveis a tarefas e links de música. Ela deve estar aplicada antes de publicar um cliente que use essa versão.
+As migrações preservam os dados atuais e adicionam identificadores de sincronização estáveis a tarefas, links de música e sessões concluídas. A migração de sessões evita duplicatas quando a gravação é repetida após recarga ou falha de rede. As migrações devem estar aplicadas antes de publicar um cliente que use essas alterações.
 
 ## Verificação
 

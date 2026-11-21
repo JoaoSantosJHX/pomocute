@@ -7,7 +7,8 @@ import { playClick } from './ClickSound';
 import AccountControls from './AccountControls';
 import { playAlarm } from './AlarmSound';
 import { I18nProvider, useI18n } from '../i18n';
-import { recordFocusSession } from '../services/data';
+import { createSyncId, recordFocusSession } from '../services/data';
+import { getStoredUser } from '../services/auth';
 
 const storageKey = 'pomocute-session-v1';
 const preferencesKey = 'pomocute-preferences-v1';
@@ -75,7 +76,16 @@ function loadSession(preferences) {
       && saved.count >= 0
       && (saved.status !== 'running' || (Number.isFinite(saved.deadline) && saved.deadline > 0))
     ) {
-      return saved;
+      const hasValidSyncId = typeof saved.syncId === 'string'
+        && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved.syncId);
+      const hasValidUserId = typeof saved.userId === 'string'
+        && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved.userId);
+      const needsSyncId = saved.status === 'running' || saved.status === 'paused';
+      return {
+        ...saved,
+        syncId: hasValidSyncId ? saved.syncId : (needsSyncId ? createSyncId() : null),
+        userId: hasValidUserId ? saved.userId : null,
+      };
     }
   } catch (_) {
     // O timer recomeça com segurança quando não há uma sessão legível no navegador.
@@ -86,6 +96,8 @@ function loadSession(preferences) {
     remaining: durationSeconds(preferences, 'pomodoro') * 1000,
     deadline: null,
     count: 0,
+    syncId: null,
+    userId: null,
   };
 }
 
@@ -164,11 +176,13 @@ export default function Timer({ onSceneAction }) {
 
     if (alerted.current) return;
     alerted.current = true;
-    recordFocusSession(mode, durationSeconds(preferences, mode)).catch(() => {});
+    if (session.syncId) {
+      recordFocusSession(mode, durationSeconds(preferences, mode), session.syncId, session.userId).catch(() => {});
+    }
     if (preferences.alarm.enabled) {
       playAlarm(preferences.alarm.type, preferences.alarm.volume);
     }
-  }, [mode, preferences, status]);
+  }, [mode, preferences, session.syncId, session.userId, status]);
 
   const selectMode = nextMode => {
     playClick();
@@ -179,6 +193,8 @@ export default function Timer({ onSceneAction }) {
       status: 'ready',
       remaining: durationSeconds(preferences, nextMode) * 1000,
       deadline: null,
+      syncId: null,
+      userId: null,
     }));
   };
 
@@ -205,7 +221,9 @@ export default function Timer({ onSceneAction }) {
       const left = previous.status === 'paused'
         ? previous.remaining
         : durationSeconds(preferences, previous.mode) * 1000;
-      return { ...previous, status: 'running', remaining: left, deadline: time + left };
+      const syncId = previous.status === 'paused' && previous.syncId ? previous.syncId : createSyncId();
+      const userId = previous.status === 'paused' ? previous.userId : getStoredUser()?.id || null;
+      return { ...previous, syncId, userId, status: 'running', remaining: left, deadline: time + left };
     });
   };
 
@@ -217,6 +235,8 @@ export default function Timer({ onSceneAction }) {
       status: 'ready',
       remaining: durationSeconds(preferences, previous.mode) * 1000,
       deadline: null,
+      syncId: null,
+      userId: null,
     }));
   };
 
@@ -258,6 +278,8 @@ export default function Timer({ onSceneAction }) {
           status: 'ready',
           remaining: nextMinutes * 60 * 1000,
           deadline: null,
+          syncId: null,
+          userId: null,
         }
         : previous
     ));
