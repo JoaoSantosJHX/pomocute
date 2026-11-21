@@ -54,7 +54,7 @@ export default function AccountControls({
     window.addEventListener('storage', handleStorageChange);
     captureOAuthSession();
     const stopAutoRefresh = startSessionAutoRefresh();
-    loadCurrentUser().then(updateUser).catch(() => {
+    loadCurrentUser().then(() => updateUser(getStoredUser())).catch(() => {
       // Mantém a sessão local visível se a rede estiver temporariamente indisponível.
     });
 

@@ -97,4 +97,19 @@ describe('auth session persistence', () => {
     resolveRequest(response({ access_token: 'fresh-token', refresh_token: 'new-refresh-token', expires_in: 3600, user }));
     await expect(firstRefresh).resolves.toEqual(expect.objectContaining({ access_token: 'fresh-token' }));
   });
+
+  it('clears the local session and requests remote logout when configured', async () => {
+    localStorage.setItem('pomocute-auth-v1', JSON.stringify({ access_token: 'valid-token', user }));
+    global.fetch.mockResolvedValueOnce(response({}));
+
+    const { signOut, getStoredSession } = loadAuth();
+    const logout = signOut();
+
+    expect(getStoredSession()).toBeNull();
+    await logout;
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://pomocute-test.supabase.co/auth/v1/logout',
+      expect.objectContaining({ method: 'POST', headers: expect.objectContaining({ Authorization: 'Bearer valid-token' }) }),
+    );
+  });
 });
