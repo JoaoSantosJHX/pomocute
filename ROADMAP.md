@@ -27,8 +27,8 @@ Este roadmap organiza o trabalho por resultados e critérios de saída, sem data
 - A produção está na `main` e no último deploy pronto da Vercel.
 - A checagem do Supabase confirmou RLS e chaves únicas para tarefas e links de música. O histórico do Supabase CLI não registra migrações, então a aplicação da migração anterior foi verificada pelos objetos existentes, não pelo ledger.
 - A auditoria identificou que sessões concluídas ainda não usam chave idempotente. A correção está isolada na branch `audit/mvp-stabilization` e requer uma migração adicional, ainda não aplicada.
-- Os testes automatizados e o build passaram nesta branch. O teste RLS ainda precisa de um banco de teste isolado.
-- A conferência visual de produção em desktop está feita; a validação em viewport móvel continua pendente.
+- No projeto isolado `pomocute-staging`, a migração de sessões foi aplicada; `client_id` obrigatório e índice único foram confirmados. O teste RLS passou nas 10 asserções e reverteu seus dados fictícios com `ROLLBACK`.
+- A produção foi conferida em desktop e nos viewports 390×844 e 320×568. Em 320×568, o painel de música ficava fora da tela; a correção na branch foi validada com cinco links e rolagem interna. Ainda falta publicar e validar em aparelho físico.
 
 **Critério de saída:** os testes automatizados e o build passam; a migração de sessões é aplicada e comprovada em ambiente seguro; uma conta não acessa nem mistura os dados de outra; os fluxos críticos funcionam em desktop e mobile; a decisão de publicar a correção fica registrada.
 
