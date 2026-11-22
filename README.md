@@ -46,6 +46,17 @@ npm run build
 
 O GitHub Actions executa esses dois comandos em pull requests e em mudanças na `main`. O Vercel cria uma prévia para revisão; a produção só deve receber a alteração depois da migração e da validação da prévia.
 
+## SEO e performance
+
+A base de SEO mantém o inglês como idioma padrão e não depende de domínio próprio:
+
+- A home inclui conteúdo semântico sobre o timer, método Pomodoro e perguntas frequentes.
+- Os vídeos de fundo usam carregamento de metadados para reduzir competição com a interface no primeiro acesso.
+- O manifesto, os metadados de compartilhamento e os dados estruturados identificam o Pomocute como uma aplicação web de produtividade.
+- Canonical, sitemap, URLs de compartilhamento e hreflang só devem ser definidos depois da escolha do domínio próprio.
+
+Após a publicação desta base, habilite **Speed Insights** e **Web Analytics** no painel do projeto Vercel. No plano Hobby, os limites gratuitos atuais devem ser conferidos antes da ativação. Use os dados separados por desktop e mobile para orientar a próxima otimização.
+
 ## Estrutura relevante
 
 - `src/components/Timer.jsx`: ciclo do timer e controles de foco.
