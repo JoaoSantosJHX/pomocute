@@ -69,6 +69,14 @@ Este roadmap organiza o trabalho por resultados e critérios de saída, sem data
 
 **Objetivo:** tornar o Pomocute mais fácil de encontrar em buscas e atrair pessoas interessadas em ferramentas de foco por canais orgânicos.
 
+**Marco 2.1 — Auditoria SEO e Performance (em implementação na branch `feat/seo-foundation`, 22/11/2026):**
+
+- Auditoria identificou ausência de sitemap, canonical, métricas reais de Core Web Vitals e conteúdo indexável no HTML inicial.
+- A base em implementação adiciona conteúdo semântico em inglês, metadados de compartilhamento, dados estruturados de aplicação web, atualização de manifesto e carregamento menos agressivo dos vídeos.
+- A versão publicada não recebe essas alterações até a revisão da branch.
+- O domínio próprio continua pendente. Canonical, sitemap, Search Console, URLs de compartilhamento e hreflang serão definidos somente após essa decisão.
+- A próxima validação compara Lighthouse em mobile e desktop e habilita a medição no Vercel dentro dos limites gratuitos disponíveis.
+
 - Fazer um diagnóstico de indexação, estrutura das páginas, metadados, links e desempenho.
 - Entender como o público procura timers Pomodoro e ferramentas de foco; priorizar termos e necessidades compatíveis com o produto.
 - Melhorar títulos, descrições, hierarquia de conteúdo e dados técnicos de SEO nas páginas existentes.

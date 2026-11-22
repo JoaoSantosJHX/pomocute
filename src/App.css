@@ -843,3 +843,132 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .settings-test-alarm:hover:not(:disabled), .settings-test-alarm:focus-visible { background: rgba(255,255,255,.85); }
 .settings-test-alarm:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 560px) { .account-controls { top: 14px; right: 16px; gap: 7px; } .account-icon-button { width: 38px; height: 38px; border-radius: 12px; } .account-popover { top: 47px; padding: 20px; } }
+
+
+/* SEO foundation: the timer remains the first full-screen experience, followed by crawlable product content. */
+.app-container {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.background-scene {
+  position: fixed;
+  width: 100vw;
+  height: 100dvh;
+}
+.timer-experience {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.app-header__tagline {
+  margin: 3px 0 0;
+  color: rgba(255, 255, 255, .8);
+  font-size: .7rem;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-shadow: 0 2px 12px rgba(17, 15, 34, .48);
+}
+.seo-content {
+  position: relative;
+  z-index: 1;
+  padding: clamp(56px, 9vw, 112px) 20px;
+  border-top: 1px solid rgba(255, 255, 255, .18);
+  color: #fff;
+  background: linear-gradient(180deg, rgba(16, 18, 46, .62), rgba(20, 14, 38, .88));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.seo-content__inner {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+.seo-content__eyebrow {
+  margin: 0 0 13px;
+  color: #f3b4da;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+.seo-content h2 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  letter-spacing: -.045em;
+  line-height: 1.04;
+}
+.seo-content__lead {
+  max-width: 720px;
+  margin: 22px 0 0;
+  color: rgba(255, 255, 255, .86);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.65;
+}
+.seo-content__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 42px;
+}
+.seo-content__grid article,
+.seo-content__method,
+.seo-content__faq {
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .09);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .14);
+}
+.seo-content__grid article {
+  padding: 22px;
+}
+.seo-content h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.seo-content__grid p,
+.seo-content__method li,
+.seo-content details p {
+  color: rgba(255, 255, 255, .78);
+  line-height: 1.55;
+}
+.seo-content__grid p { margin: 10px 0 0; }
+.seo-content__method,
+.seo-content__faq {
+  margin-top: 18px;
+  padding: 26px;
+}
+.seo-content__method ol {
+  display: grid;
+  gap: 9px;
+  margin: 17px 0 0;
+  padding-left: 21px;
+}
+.seo-content__faq details {
+  padding: 15px 0;
+  border-top: 1px solid rgba(255, 255, 255, .16);
+}
+.seo-content__faq details:first-of-type { margin-top: 14px; }
+.seo-content__faq summary {
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
+}
+.seo-content__faq details p { max-width: 690px; margin: 10px 0 0; }
+@media (max-width: 700px) {
+  .timer-experience { padding: 20px 16px 32px; }
+  .seo-content { padding: 64px 18px 76px; }
+  .seo-content__grid { grid-template-columns: 1fr; }
+  .seo-content__method,
+  .seo-content__faq { padding: 21px; }
+}

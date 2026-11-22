@@ -19,6 +19,15 @@ const click = name => fireEvent.click(screen.getByRole('button', { name, exact: 
 const activeBackground = () => document.querySelector('.background-scene--current').getAttribute('src');
 const activeVideo = () => document.querySelector('.background-scene--current');
 
+test('apresenta conteúdo de descoberta e posteriza o carregamento do vídeo', () => {
+  render(<App />);
+
+  expect(screen.getByRole('heading', { name: 'A calm Pomodoro timer for focused work' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'How the Pomodoro technique works' })).toBeInTheDocument();
+  expect(screen.getByText('Do I need an account to use Pomocute?')).toBeInTheDocument();
+  expect(activeVideo()).toHaveAttribute('preload', 'metadata');
+});
+
 test('alterna a cena de foco a cada nova sessão', () => {
   jest.spyOn(Math, 'random').mockReturnValue(0);
   const openWindow = jest.spyOn(window, 'open').mockReturnValue(null);

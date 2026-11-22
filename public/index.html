@@ -5,37 +5,43 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#c23588" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="Pomocute" />
     <meta name="description" content="Pomocute is a calm Pomodoro timer for focus sessions, breaks, tasks, and ambient music." />
     <meta name="robots" content="index,follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pomocute" />
+    <meta property="og:title" content="Pomodoro Timer for Focus | Pomocute" />
+    <meta property="og:description" content="A calm Pomodoro timer for focus sessions, breaks, tasks, and ambient music." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Pomodoro Timer for Focus | Pomocute" />
+    <meta name="twitter:description" content="A calm Pomodoro timer for focus sessions, breaks, tasks, and ambient music." />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>Pomocute | Pomodoro timer for focus</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pomocute",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Web",
+        "inLanguage": ["en", "pt-BR", "es", "fr", "de"],
+        "description": "A calm Pomodoro timer for focus sessions, breaks, tasks, and ambient music."
+      }
+    </script>
+    <title>Pomodoro Timer for Focus | Pomocute</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    <noscript>Pomocute needs JavaScript to run the interactive timer.</noscript>
+    <div id="root">
+      <main style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:#171d3b;color:#fff;font-family:system-ui,sans-serif;text-align:center">
+        <div style="max-width:620px">
+          <p style="margin:0 0 12px;font-size:0.8rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#f8b7e0">Pomocute</p>
+          <h1 style="margin:0;font-size:clamp(2rem,7vw,4rem)">Pomodoro Timer for Focus</h1>
+          <p style="margin:18px 0 0;font-size:1.05rem;line-height:1.55">A calm timer for focused work, intentional breaks, simple tasks, and ambient music.</p>
+        </div>
+      </main>
+    </div>
   </body>
 </html>
