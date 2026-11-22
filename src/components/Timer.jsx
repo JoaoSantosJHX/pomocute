@@ -367,9 +367,9 @@ function TimerView({
   const isFocusMode = status === 'running' || status === 'paused';
   const timerActionLabel = status === 'running' ? t('timer.pause') : status === 'paused' ? t('timer.resume') : t('timer.start');
 
-  return <>
+  return <section className="timer-experience" aria-label="Pomodoro timer">
     <header className="app-header">
-      <h1>Pomocute</h1>
+      <div><h1>Pomocute</h1><p className="app-header__tagline">Pomodoro timer for focus</p></div>
       <AccountControls
         preferences={preferences}
         isSessionLocked={isSessionLocked}
@@ -468,5 +468,5 @@ function TimerView({
       onEnergyChange={onMusicEnergyChange}
       onExternalPlayback={onExternalPlaybackChange}
     />
-  </>;
+  </section>;
 }
